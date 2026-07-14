@@ -1,13 +1,13 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Esfera de Bloch Interativa</title>
+    <title>Quantum Lab - Hadamard & Bloch</title>
     <style>
         :root {
             --bg-color: #0b0f19;
-            --panel-bg: rgba(15, 23, 42, 0.85);
+            --panel-bg: rgba(15, 23, 42, 0.9);
             --accent-color: #00ffcc;
             --text-color: #f1f5f9;
         }
@@ -16,42 +16,57 @@
             background-color: var(--bg-color); 
             color: var(--text-color); 
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            overflow: hidden; 
+            overflow-x: hidden;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
         }
         
-        /* Cabeçalho e Seleção de Idioma */
-        header {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            z-index: 10;
+        /* Layout Geral Split */
+        #app-container {
+            display: flex;
+            flex-direction: row;
+            height: calc(100vh - 160px);
+            width: 100vw;
+        }
+        @media (max-width: 900px) {
+            #app-container { flex-direction: column; height: auto; }
+            #canvas-container { height: 400px; }
+        }
+
+        #canvas-container {
+            flex: 1;
+            position: relative;
+            background: radial-gradient(circle at center, #151d30 0%, #0b0f19 100%);
+        }
+
+        #panel-container {
+            width: 400px;
             background: var(--panel-bg);
-            padding: 15px 25px;
-            border-radius: 12px;
-            backdrop-filter: blur(8px);
-            border: 1px solid rgba(255,255,255,0.1);
-            max-width: 350px;
+            border-left: 1px solid rgba(255,255,255,0.1);
+            padding: 20px;
+            overflow-y: auto;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
         }
-        h2 { margin: 0 0 5px 0; font-size: 1.3rem; letter-spacing: 1px; color: var(--accent-color); }
-        #state-vector { font-family: monospace; font-size: 1.1rem; margin: 10px 0; }
-        
+
         /* Seletor de Idiomas */
         .lang-selector {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            z-index: 10;
             display: flex;
+            flex-wrap: wrap;
             gap: 5px;
+            margin-bottom: 10px;
         }
         .lang-btn {
-            background: var(--panel-bg);
-            border: 1px solid rgba(255,255,255,0.2);
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
             color: var(--text-color);
-            padding: 6px 12px;
-            border-radius: 6px;
+            padding: 4px 8px;
+            border-radius: 4px;
             cursor: pointer;
-            font-weight: bold;
+            font-size: 0.75rem;
             transition: all 0.2s;
         }
         .lang-btn.active, .lang-btn:hover {
@@ -60,276 +75,503 @@
             border-color: var(--accent-color);
         }
 
-        /* Painel Didático */
-        #didactic-panel {
-            position: absolute;
-            top: 150px;
-            left: 20px;
-            z-index: 10;
-            background: var(--panel-bg);
-            padding: 15px 25px;
-            border-radius: 12px;
-            backdrop-filter: blur(8px);
-            border: 1px solid rgba(255,255,255,0.1);
-            max-width: 350px;
-            font-size: 0.9rem;
-            line-height: 1.4;
-        }
-        .stat-line { margin: 5px 0; font-family: monospace; }
+        h2 { margin: 0; font-size: 1.2rem; color: var(--accent-color); letter-spacing: 1px; }
+        #state-vector { font-family: monospace; font-size: 1rem; background: rgba(0,0,0,0.3); padding: 8px; border-radius: 6px; margin: 10px 0; border-left: 3px solid var(--accent-color); }
 
-        /* Controles Inferiores */
-        .controls { 
-            position: absolute; 
-            bottom: 30px; 
-            left: 50%; 
-            transform: translateX(-50%); 
-            z-index: 10; 
-            display: flex; 
-            gap: 25px; 
-            background: var(--panel-bg); 
-            padding: 20px 30px; 
-            border-radius: 16px; 
-            backdrop-filter: blur(8px); 
-            border: 1px solid rgba(255,255,255,0.1);
+        /* Circuito Quântico */
+        #circuit-area {
+            background: rgba(15, 23, 42, 0.95);
+            border-top: 2px solid rgba(255,255,255,0.1);
+            padding: 15px 30px;
+            box-sizing: border-box;
+            height: 160px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
         }
-        label { display: flex; flex-direction: column; align-items: center; font-size: 0.85rem; letter-spacing: 0.5px; }
-        input[type=range] { 
-            width: 150px; 
-            margin-top: 8px; 
+        .circuit-title-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .qubit-lines-container {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-top: 10px;
+        }
+        .qubit-line {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            position: relative;
+        }
+        .qubit-label {
+            font-family: monospace;
+            font-weight: bold;
+            min-width: 50px;
             cursor: pointer;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+        .qubit-label.active {
+            background: rgba(0, 255, 204, 0.2);
+            border: 1px solid var(--accent-color);
+        }
+        .wire {
+            flex-grow: 1;
+            height: 2px;
+            background: rgba(255,255,255,0.3);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding-left: 10px;
+        }
+        .gate-btn {
+            background: #1e293b;
+            border: 1px solid var(--accent-color);
+            color: var(--text-color);
+            border-radius: 4px;
+            cursor: pointer;
+            padding: 4px 10px;
+            font-size: 0.8rem;
+            font-family: monospace;
+            transition: all 0.2s;
+        }
+        .gate-btn:hover {
+            background: var(--accent-color);
+            color: var(--bg-color);
+        }
+        .reset-btn {
+            background: #ef4444;
+            color: white;
+            border: none;
+            padding: 5px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: opacity 0.2s;
+        }
+        .reset-btn:hover { opacity: 0.9; }
+
+        /* Controles manuais */
+        .manual-controls {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        input[type=range] {
+            width: 100%;
             accent-color: var(--accent-color);
         }
-        
-        /* Instrução de arrastar */
-        #drag-instruction {
-            position: absolute;
-            bottom: 120px;
-            left: 50%;
-            transform: translateX(-50%);
-            font-size: 0.8rem;
-            opacity: 0.6;
-            pointer-events: none;
-            text-align: center;
-        }
     </style>
-    <!-- Three.js e OrbitControls para arrastar/rotacionar a câmera -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 </head>
 <body>
 
-    <!-- Seleção de Idioma -->
-    <div class="lang-selector">
-        <button class="lang-btn active" onclick="setLanguage('pt')">PT</button>
-        <button class="lang-btn" onclick="setLanguage('en')">EN</button>
-        <button class="lang-btn" onclick="setLanguage('es')">ES</button>
-        <button class="lang-btn" onclick="setLanguage('zh')">ZH</button>
+    <div id="app-container">
+        <!-- Esfera 3D -->
+        <div id="canvas-container"></div>
+
+        <!-- Painel de Dados Lateral -->
+        <div id="panel-container">
+            <div class="lang-selector">
+                <button class="lang-btn active" onclick="setLanguage('pt')">PT</button>
+                <button class="lang-btn" onclick="setLanguage('en')">EN</button>
+                <button class="lang-btn" onclick="setLanguage('es')">ES</button>
+                <button class="lang-btn" onclick="setLanguage('fr')">FR</button>
+                <button class="lang-btn" onclick="setLanguage('ru')">RU</button>
+                <button class="lang-btn" onclick="setLanguage('ar')">AR</button>
+                <button class="lang-btn" onclick="setLanguage('fa')">FA</button>
+                <button class="lang-btn" onclick="setLanguage('zh')">ZH</button>
+            </div>
+
+            <h2 id="lbl-title">ESFERA DE BLOCH</h2>
+            <div id="state-vector">|ψ⟩ = 1.00|0⟩ + 0.00|1⟩</div>
+
+            <div>
+                <strong id="lbl-analise">Análise Didática:</strong>
+                <p id="lbl-explanation" style="font-size: 0.9rem; line-height: 1.4; opacity: 0.9;"></p>
+            </div>
+
+            <hr style="border: 0; border-top: 1px solid rgba(255,255,255,0.1);">
+
+            <!-- Controles Manuais -->
+            <div class="manual-controls">
+                <label id="lbl-theta">θ (Latitude)</label>
+                <input type="range" id="theta" min="0" max="3.1415" step="0.01" value="0">
+                
+                <label id="lbl-phi">φ (Longitude)</label>
+                <input type="range" id="phi" min="0" max="6.2831" step="0.01" value="0">
+            </div>
+        </div>
     </div>
 
-    <!-- Cabeçalho de Estado -->
-    <header>
-        <h2 id="title-text">ESFERA DE BLOCH</h2>
-        <div id="state-vector">|ψ⟩ = 1.00|0⟩ + 0.00|1⟩</div>
-    </header>
+    <!-- Simulador de Circuitos Quânticos -->
+    <div id="circuit-area">
+        <div class="circuit-title-row">
+            <h2 id="lbl-circuit-title">Simulador de Circuito Quântico</h2>
+            <button class="reset-btn" onclick="resetAll()" id="lbl-reset">Reinicializar Qubits</button>
+        </div>
 
-    <!-- Painel Didático Dinâmico -->
-    <div id="didactic-panel">
-        <strong id="analysis-title">Análise do Estado:</strong>
-        <p id="explanation-text">O qubit está no estado puro |0⟩ (Polo Norte).</p>
-        <hr style="border: 0; border-top: 1px solid rgba(255,255,255,0.1); margin: 10px 0;">
-        <div class="stat-line">P(|0⟩): <span id="prob0" style="color: #00ffcc;">100%</span></div>
-        <div class="stat-line">P(|1⟩): <span id="prob1" style="color: #ff5555;">0%</span></div>
-    </div>
-
-    <div id="drag-instruction">Arrastar com o botão esquerdo rotaciona o espaço 3D</div>
-
-    <!-- Controles deslizantes -->
-    <div class="controls">
-        <label><span id="label-theta">θ (Latitude)</span>
-            <input type="range" id="theta" min="0" max="3.1415" step="0.01" value="0">
-        </label>
-        <label><span id="label-phi">φ (Longitude)</span>
-            <input type="range" id="phi" min="0" max="6.2831" step="0.01" value="0">
-        </label>
+        <div class="qubit-lines-container">
+            <!-- Qubit 1 -->
+            <div class="qubit-line">
+                <div class="qubit-label active" id="q0-lbl" onclick="selectQubit(0)">q[0]: |0⟩</div>
+                <div class="wire">
+                    <button class="gate-btn" onclick="applyHadamard(0)">H</button>
+                    <button class="gate-btn" onclick="applyX(0)">NOT (X)</button>
+                    <button class="gate-btn" onclick="applyMeasure(0)" id="lbl-m0">Medir</button>
+                </div>
+            </div>
+            <!-- Qubit 2 -->
+            <div class="qubit-line">
+                <div class="qubit-label" id="q1-lbl" onclick="selectQubit(1)">q[1]: |0⟩</div>
+                <div class="wire">
+                    <button class="gate-btn" onclick="applyHadamard(1)">H</button>
+                    <button class="gate-btn" onclick="applyX(1)">NOT (X)</button>
+                    <button class="gate-btn" onclick="applyCNOT(0, 1)">CNOT (q0->q1)</button>
+                    <button class="gate-btn" onclick="applyMeasure(1)" id="lbl-m1">Medir</button>
+                </div>
+            </div>
+            <!-- Qubit 3 -->
+            <div class="qubit-line">
+                <div class="qubit-label" id="q2-lbl" onclick="selectQubit(2)">q[2]: |0⟩</div>
+                <div class="wire">
+                    <button class="gate-btn" onclick="applyHadamard(2)">H</button>
+                    <button class="gate-btn" onclick="applyX(2)">NOT (X)</button>
+                    <button class="gate-btn" onclick="applyCNOT(1, 2)">CNOT (q1->q2)</button>
+                    <button class="gate-btn" onclick="applyMeasure(2)" id="lbl-m2">Medir</button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script>
-        // Dicionário de Idiomas (i18n)
+        // Dicionário de Idiomas
         const translations = {
             pt: {
                 title: "ESFERA DE BLOCH",
-                analysis: "Análise Quântica:",
-                drag: "Arraste para rotacionar a perspectiva da câmera",
-                theta: "θ (Theta - Latitude)",
-                phi: "φ (Phi - Longitude)",
-                pure0: "O qubit está no estado fundamental puro |0⟩. Probabilidade de 100% de colapsar para zero.",
-                pure1: "O qubit está no estado excitado puro |1⟩. Probabilidade de 100% de colapsar para um.",
-                equator: "Superposição perfeitamente equilibrada! A chance de medir |0⟩ ou |1⟩ é exatamente de 50%.",
-                superposition: "O qubit está em superposição coerente. Ele existe em ambos os estados simultaneamente até ser medido."
+                analise: "Análise Didática:",
+                theta: "θ (Theta - Latitude/Fase Co-latitude)",
+                phi: "φ (Phi - Longitude/Fase Quântica)",
+                circuit: "Simulador de Circuito Quântico",
+                reset: "Reinicializar Qubits",
+                measure: "Medir",
+                pure0: "O Qubit está no estado fundamental puro |0⟩. Um colapso clássico dará '0' com 100% de certeza.",
+                pure1: "O Qubit está no estado excitado puro |1⟩. Um colapso clássico dará '1' com 100% de certeza.",
+                superposition: "Estado de Superposição Quântica. O qubit está suspenso entre o |0⟩ e o |1⟩. Portas como Hadamard (H) o colocam nesse estado matemático dinâmico.",
+                entangled: "Atenção: Este Qubit sofreu emaranhamento via CNOT. Seu estado está correlacionado à outra partícula quântica!",
+                measuring: "Qubit medido! O estado colapsou para um valor definido."
             },
             en: {
                 title: "BLOCH SPHERE",
-                analysis: "Quantum Analysis:",
-                drag: "Drag to rotate the camera perspective",
-                theta: "θ (Theta - Latitude)",
-                phi: "φ (Phi - Longitude)",
-                pure0: "The qubit is in the pure ground state |0⟩. 100% probability of collapsing to zero.",
-                pure1: "The qubit is in the pure excited state |1⟩. 100% probability of collapsing to one.",
-                equator: "Perfectly balanced superposition! The chance of measuring |0⟩ or |1⟩ is exactly 50%.",
-                superposition: "The qubit is in a coherent superposition. It exists in both states simultaneously until measured."
+                analise: "Didactic Analysis:",
+                theta: "θ (Theta - Latitude/Co-latitude Phase)",
+                phi: "φ (Phi - Longitude/Quantum Phase)",
+                circuit: "Quantum Circuit Simulator",
+                reset: "Reset Qubits",
+                measure: "Measure",
+                pure0: "The Qubit is in the pure ground state |0⟩. A classical collapse will yield '0' with 100% certainty.",
+                pure1: "The Qubit is in the pure excited state |1⟩. A classical collapse will yield '1' with 100% certainty.",
+                superposition: "Quantum Superposition State. The qubit is suspended between |0⟩ and |1⟩. Gates like Hadamard (H) place it here.",
+                entangled: "Warning: This Qubit is entangled via CNOT! Its state is physically correlated to another qubit.",
+                measuring: "Qubit measured! The state collapsed to a definite classical value."
             },
             es: {
                 title: "ESFERA DE BLOCH",
-                analysis: "Análisis Cuántico:",
-                drag: "Arrastra para rotar la perspectiva de la cámara",
+                analise: "Análisis Didáctico:",
                 theta: "θ (Theta - Latitud)",
                 phi: "φ (Phi - Longitud)",
-                pure0: "El qubit está en el estado fundamental puro |0⟩. 100% de probabilidad de colapsar a cero.",
-                pure1: "El qubit está en el estado excitado puro |1⟩. 100% de probabilidad de colapsar a uno.",
-                equator: "¡Superposición perfectamente equilibrada! La probabilidad de medir |0⟩ o |1⟩ es exactamente del 50%.",
-                superposition: "El qubit está en superposición coherente. Existe en ambos estados simultáneamente hasta ser medido."
+                circuit: "Simulador de Circuito Cuántico",
+                reset: "Reiniciar Qubits",
+                measure: "Medir",
+                pure0: "El Qubit está en el estado puro fundamental |0⟩. Dará '0' con 100% de certeza al medir.",
+                pure1: "El Qubit está en el estado puro excitado |1⟩. Dará '1' con 100% de certeza al medir.",
+                superposition: "Superposición Cuántica. El qubit flota entre |0⟩ y |1⟩ simultáneamente hasta ser medido.",
+                entangled: "¡Emaranamiento detectado! Este Qubit está correlacionado por una compuerta CNOT.",
+                measuring: "¡Qubit medido! El estado ha colapsado."
+            },
+            fr: {
+                title: "SPHÈRE DE BLOCH",
+                analise: "Analyse Didactique :",
+                theta: "θ (Thêta - Latitude)",
+                phi: "φ (Phi - Longitude)",
+                circuit: "Simulateur de Circuit Quantique",
+                reset: "Réinitialiser",
+                measure: "Mesurer",
+                pure0: "Le Qubit est dans l'état fondamental pur |0⟩. Une mesure donnera '0' à 100%.",
+                pure1: "Le Qubit est dans l'état excité pur |1⟩. Une mesure donnera '1' à 100%.",
+                superposition: "Superposition Quantique. Le qubit oscille entre |0⟩ et |1⟩ avant la mesure.",
+                entangled: "Intrication Quantique ! Ce qubit est corrélé à un autre par une porte CNOT.",
+                measuring: "Qubit mesuré ! L'état s'est effondré."
+            },
+            ru: {
+                title: "СФЕРА БЛОХА",
+                analise: "Дидактический анализ:",
+                theta: "θ (Тета - Широта)",
+                phi: "φ (Фи - Долгота)",
+                circuit: "Квантовый симулятор цепи",
+                reset: "Сбросить кубиты",
+                measure: "Измерить",
+                pure0: "Кубит в чистом основном состоянии |0⟩. Измерение даст '0' со 100% вероятностью.",
+                pure1: "Кубит в возбужденном состоянии |1⟩. Измерение даст '1' со 100% вероятностью.",
+                superposition: "Квантовая суперпозиция. Кубит находится одновременно в |0⟩ и |1⟩.",
+                entangled: "Квантовая запутанность! Этот кубит связан с другим через CNOT.",
+                measuring: "Кубит измерен! Произошел коллапс волновой функции."
+            },
+            ar: {
+                title: "كرة بلوخ",
+                analise: "التحليل التعليمي:",
+                theta: "θ (ثيتا - خط العرض)",
+                phi: "φ (فاي - خط الطول)",
+                circuit: "محاكي الدائرة الكمومية",
+                reset: "إعادة ضبط الكيوبت",
+                measure: "قياس",
+                pure0: "الكيوبت في الحالة الأساسية النقية |0⟩. القياس سيعطي '0' بنسبة 100%.",
+                pure1: "الكيوبت في الحالة المثارة النقية |1⟩. القياس سيعطي '1' بنسبة 100%.",
+                superposition: "حالة التراكب الكمي. الكيوبت معلق بين |0⟩ و |1⟩ حتى قياسه.",
+                entangled: "الكيوبت متشابك عبر بوابة CNOT مع جسيم آخر!",
+                measuring: "تم القياس! انهارت الدالة الموجية."
+            },
+            fa: {
+                title: "کره بلاخ",
+                analise: "تحلیل آموزشی:",
+                theta: "θ (تتا - عرض جغرافیایی)",
+                phi: "φ (فی - طول جغرافیایی)",
+                circuit: "شبیه‌ساز مدار کوانتومی",
+                reset: "راه‌اندازی مجدد کیوبیت‌ها",
+                measure: "اندازه‌گیری",
+                pure0: "کیوبیت در حالت پایه خالص |0⟩ قرار دارد. اندازه‌گیری با احتمال ۱۰۰٪ خروجی '۰' می‌دهد.",
+                pure1: "کیوبیت در حالت برانگیخته خالص |1⟩ قرار دارد. اندازه‌گیری خروجی '۱' می‌دهد.",
+                superposition: "در حالت درهم‌تنیدگی/ابرمرتبه کوانتومی. کیوبیت در حالت میانی معلق است.",
+                entangled: "این کیوبیت درهم‌تنیده است! حالت آن به کیوبیت دیگر وابسته است.",
+                measuring: "اندازه‌گیری شد! فروپاشی حالت کوانتومی رخ داد."
             },
             zh: {
                 title: "布洛赫球面",
-                analysis: "量子态分析:",
-                drag: "拖拽以旋转相机视角",
+                analise: "教学分析:",
                 theta: "θ (西塔 - 纬度)",
                 phi: "φ (斐 - 经度)",
-                pure0: "量子比特处于纯基态 |0⟩。坍缩为零 prospect 为 100%。",
-                pure1: "量子比特处于纯激发态 |1⟩。坍缩为一 prospect 为 100%。",
-                equator: "完美平衡的叠加态！测量为 |0⟩ 或 |1⟩ 的概率恰好为 50%。",
-                superposition: "量子比特处于相干叠加态。在被测量之前，它同时存在于两种状态中。"
+                circuit: "量子电路模拟器",
+                reset: "重置量子比特",
+                measure: "测量",
+                pure0: "量子比特处于纯基态 |0⟩。测量将有 100% 几率坍缩为 0。",
+                pure1: "量子比特处于纯激发态 |1⟩。测量将有 100% 几率坍缩为 1。",
+                superposition: "量子叠加态。利用哈达玛门（H）可以使量子比特悬浮于二者之间。",
+                entangled: "纠缠态！该量子比特通过 CNOT 门与其它比特发生纠缠。",
+                measuring: "测量完成！波函数发生坍缩。"
             }
         };
 
         let currentLang = 'pt';
+        let activeQubit = 0;
+
+        // Estado dos 3 qubits: guardamos [theta, phi]
+        let qubitsState = [
+            { theta: 0, phi: 0, status: 'pure0' },
+            { theta: 0, phi: 0, status: 'pure0' },
+            { theta: 0, phi: 0, status: 'pure0' }
+        ];
 
         function setLanguage(lang) {
             currentLang = lang;
-            
-            // Atualiza botões ativos
             document.querySelectorAll('.lang-btn').forEach(btn => btn.classList.remove('active'));
             event.target.classList.add('active');
 
-            // Traduz elementos da interface
-            document.getElementById('title-text').innerText = translations[lang].title;
-            document.getElementById('analysis-title').innerText = translations[lang].analysis;
-            document.getElementById('drag-instruction').innerText = translations[lang].drag;
-            document.getElementById('label-theta').innerText = translations[lang].theta;
-            document.getElementById('label-phi').innerText = translations[lang].phi;
-
-            updateState(); // Atualiza a análise textual
+            document.getElementById('lbl-title').innerText = translations[lang].title;
+            document.getElementById('lbl-analise').innerText = translations[lang].analise;
+            document.getElementById('lbl-theta').innerText = translations[lang].theta;
+            document.getElementById('lbl-phi').innerText = translations[lang].phi;
+            document.getElementById('lbl-circuit-title').innerText = translations[lang].circuit;
+            document.getElementById('lbl-reset').innerText = translations[lang].reset;
+            
+            for(let i=0; i<3; i++) {
+                document.getElementById('lbl-m'+i).innerText = translations[lang].measure;
+            }
+            updateStateVisuals();
         }
 
-        // Setup do Three.js
+        // Configuração Tridimensional (Three.js)
+        const container = document.getElementById('canvas-container');
         const scene = new THREE.Scene();
-        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
-        const renderer = new THREE.WebGLRenderer({ antialias: true });
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        document.body.appendChild(renderer.domElement);
+        const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(container.clientWidth, container.clientHeight);
+        container.appendChild(renderer.domElement);
 
-        // Adicionando controle de órbita (interatividade com mouse)
         const controls = new THREE.OrbitControls(camera, renderer.domElement);
         controls.enableDamping = true;
         controls.dampingFactor = 0.05;
-        controls.rotateSpeed = 0.8;
 
-        // Construindo a Esfera
-        const sphereGeo = new THREE.SphereGeometry(2, 40, 40);
-        const sphereMat = new THREE.MeshBasicMaterial({ color: 0x3b82f6, wireframe: true, transparent: true, opacity: 0.15 });
+        // Elementos da Esfera
+        const sphereGroup = new THREE.Group();
+        scene.add(sphereGroup);
+
+        const sphereGeo = new THREE.SphereGeometry(2, 32, 16);
+        const sphereMat = new THREE.MeshBasicMaterial({ color: 0x3b82f6, wireframe: true, transparent: true, opacity: 0.1 });
         const sphere = new THREE.Mesh(sphereGeo, sphereMat);
-        scene.add(sphere);
+        sphereGroup.add(sphere);
 
-        // Anel do Equador destacado (superposição)
-        const ringGeo = new THREE.RingGeometry(1.99, 2.01, 64);
-        const ringMat = new THREE.MeshBasicMaterial({ color: 0x00ffcc, side: THREE.DoubleSide, transparent: true, opacity: 0.4 });
+        // Anel Equador
+        const ringGeo = new THREE.RingGeometry(1.98, 2.02, 64);
+        const ringMat = new THREE.MeshBasicMaterial({ color: 0x00ffcc, side: THREE.DoubleSide, transparent: true, opacity: 0.3 });
         const equator = new THREE.Mesh(ringGeo, ringMat);
         equator.rotation.x = Math.PI / 2;
-        scene.add(equator);
+        sphereGroup.add(equator);
 
-        // Eixos de Referência
-        const axesHelper = new THREE.AxesHelper(2.5);
-        scene.add(axesHelper);
+        // Vetor (Seta de Estado)
+        const arrowHelper = new THREE.ArrowHelper(new THREE.Vector3(0, 1, 0), new THREE.Vector3(0,0,0), 2, 0x00ffcc, 0.4, 0.15);
+        sphereGroup.add(arrowHelper);
 
-        // Vetor de Estado (Seta do Qubit)
-        const dir = new THREE.Vector3(0, 1, 0); 
-        const origin = new THREE.Vector3(0, 0, 0);
-        const arrowHelper = new THREE.ArrowHelper(dir, origin, 2, 0x00ffcc, 0.4, 0.15);
-        scene.add(arrowHelper);
+        camera.position.set(3, 3, 5);
 
-        // Posicionamento de Câmera
-        camera.position.set(3, 2, 5);
-        controls.update();
+        // Lógica de Atualização Física/Estética
+        function updateStateVisuals() {
+            const q = qubitsState[activeQubit];
+            
+            // Atualizar Sliders
+            document.getElementById('theta').value = q.theta;
+            document.getElementById('phi').value = q.phi;
 
-        // Elementos UI
-        const thetaInput = document.getElementById('theta');
-        const phiInput = document.getElementById('phi');
-        const stateText = document.getElementById('state-vector');
-        const explanationText = document.getElementById('explanation-text');
-        const prob0Text = document.getElementById('prob0');
-        const prob1Text = document.getElementById('prob1');
-
-        function updateState() {
-            const theta = parseFloat(thetaInput.value);
-            const phi = parseFloat(phiInput.value);
-
-            // Conversão de coordenadas esféricas para cartesianas (eixos padrão do Three.js)
-            const x = Math.sin(theta) * Math.cos(phi);
-            const z = Math.sin(theta) * Math.sin(phi);
-            const y = Math.cos(theta); // No Three.js, Y é a altura (Polo Norte)
-
+            // Converter para Cartesianas (Y é altura no ThreeJS)
+            const x = Math.sin(q.theta) * Math.cos(q.phi);
+            const z = Math.sin(q.theta) * Math.sin(q.phi);
+            const y = Math.cos(q.theta);
+            
             arrowHelper.setDirection(new THREE.Vector3(x, y, z));
 
-            // Cálculo das amplitudes de probabilidade
-            const cosTheta2 = Math.cos(theta / 2);
-            const sinTheta2 = Math.sin(theta / 2);
+            // Vetor ket formatado
+            const amp0 = Math.cos(q.theta / 2).toFixed(2);
+            const amp1 = Math.sin(q.theta / 2).toFixed(2);
+            document.getElementById('state-vector').innerHTML = `|ψ⟩ = ${amp0}|0⟩ + e^(i·${q.phi.toFixed(2)})${amp1}|1⟩`;
 
-            // Probabilidade de colapsar para |0> ou |1> (Norma ao quadrado)
-            const p0 = Math.pow(cosTheta2, 2);
-            const p1 = Math.pow(sinTheta2, 2);
+            // Label do Qubit no circuito
+            document.getElementById(`q${activeQubit}-lbl`).innerText = `q[${activeQubit}]: |ψ⟩`;
 
-            // Formatação do vetor ket de estado
-            const amp0 = cosTheta2.toFixed(2);
-            const amp1 = sinTheta2.toFixed(2);
-            stateText.innerHTML = `|ψ⟩ = ${amp0}|0⟩ + e^(i·${phi.toFixed(2)})${amp1}|1⟩`;
-
-            // Atualização das probabilidades na tela
-            prob0Text.innerText = `${(p0 * 100).toFixed(0)}%`;
-            prob1Text.innerText = `${(p1 * 100).toFixed(0)}%`;
-
-            // Lógica Didática de explicação em tempo real
-            let explanation = "";
-            if (theta < 0.1) {
-                explanation = translations[currentLang].pure0;
-            } else if (theta > 3.0) {
-                explanation = translations[currentLang].pure1;
-            } else if (Math.abs(theta - Math.PI / 2) < 0.15) {
-                explanation = translations[currentLang].equator;
-            } else {
-                explanation = translations[currentLang].superposition;
-            }
-            explanationText.innerText = explanation;
+            // Textos explicativos didáticos baseados no estado
+            let explanation = translations[currentLang][q.status] || translations[currentLang].superposition;
+            document.getElementById('lbl-explanation').innerText = explanation;
         }
 
-        thetaInput.addEventListener('input', updateState);
-        phiInput.addEventListener('input', updateState);
+        // Funções das Portas Lógicas do Simulador
+        function applyHadamard(id) {
+            let q = qubitsState[id];
+            if (q.theta === 0) { // De |0> para superposição equilibrada
+                q.theta = Math.PI / 2;
+                q.phi = 0;
+            } else if (Math.abs(q.theta - Math.PI) < 0.1) { // De |1> para superposição equilibrada com fase
+                q.theta = Math.PI / 2;
+                q.phi = Math.PI;
+            } else {
+                q.theta = 0; // Volta ao estado inicial
+                q.phi = 0;
+            }
+            q.status = 'superposition';
+            updateStateVisuals();
+            syncCircuitLabels();
+        }
 
-        // Inicializar Estado Inicial
-        updateState();
+        function applyX(id) {
+            let q = qubitsState[id];
+            q.theta = Math.PI - q.theta; // Inverte o eixo vertical (Porta NOT)
+            q.status = q.theta > 1.5 ? 'pure1' : 'pure0';
+            updateStateVisuals();
+            syncCircuitLabels();
+        }
 
-        // Loop de Renderização
+        function applyCNOT(control, target) {
+            let ctrlQ = qubitsState[control];
+            let tgtQ = qubitsState[target];
+            // Se o controle está em |1> ou em superposição, aplica-se efeito
+            if (ctrlQ.theta > 0.5) { 
+                tgtQ.theta = Math.PI - tgtQ.theta;
+                tgtQ.status = 'entangled';
+            }
+            updateStateVisuals();
+            syncCircuitLabels();
+        }
+
+        function applyMeasure(id) {
+            let q = qubitsState[id];
+            const p0 = Math.pow(Math.cos(q.theta / 2), 2);
+            const r = Math.random();
+            
+            // Colapso Quântico clássico (Medição)
+            if (r < p0) {
+                q.theta = 0;
+                q.phi = 0;
+                q.status = 'pure0';
+            } else {
+                q.theta = Math.PI;
+                q.phi = 0;
+                q.status = 'pure1';
+            }
+            updateStateVisuals();
+            syncCircuitLabels();
+        }
+
+        function resetAll() {
+            qubitsState = [
+                { theta: 0, phi: 0, status: 'pure0' },
+                { theta: 0, phi: 0, status: 'pure0' },
+                { theta: 0, phi: 0, status: 'pure0' }
+            ];
+            updateStateVisuals();
+            syncCircuitLabels();
+        }
+
+        function selectQubit(id) {
+            activeQubit = id;
+            document.querySelectorAll('.qubit-label').forEach((el, idx) => {
+                if(idx === id) el.classList.add('active');
+                else el.classList.remove('active');
+            });
+            updateStateVisuals();
+        }
+
+        function syncCircuitLabels() {
+            for(let i=0; i<3; i++) {
+                const q = qubitsState[i];
+                let val = "|ψ⟩";
+                if (q.theta === 0) val = "|0⟩";
+                if (Math.abs(q.theta - Math.PI) < 0.1) val = "|1⟩";
+                document.getElementById(`q${i}-lbl`).innerText = `q[${i}]: ${val}`;
+            }
+        }
+
+        // Sincronização dos Sliders Manuais
+        document.getElementById('theta').addEventListener('input', (e) => {
+            qubitsState[activeQubit].theta = parseFloat(e.target.value);
+            qubitsState[activeQubit].status = 'superposition';
+            updateStateVisuals();
+        });
+        document.getElementById('phi').addEventListener('input', (e) => {
+            qubitsState[activeQubit].phi = parseFloat(e.target.value);
+            qubitsState[activeQubit].status = 'superposition';
+            updateStateVisuals();
+        });
+
+        // Loop de Renderização com Rotação Contínua Automatizada
         function animate() {
             requestAnimationFrame(animate);
-            controls.update(); // Permite o arrastar de câmera fluido
+            
+            // Mantém a rotação automática da esfera no espaço tridimensional
+            sphereGroup.rotation.y += 0.005;
+
+            controls.update();
             renderer.render(scene, camera);
         }
+
+        // Setup inicial
+        setLanguage('pt');
         animate();
 
-        // Responsividade do Canvas
         window.addEventListener('resize', () => {
-            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.aspect = container.clientWidth / container.clientHeight;
             camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setSize(container.clientWidth, container.clientHeight);
         });
     </script>
 </body>
