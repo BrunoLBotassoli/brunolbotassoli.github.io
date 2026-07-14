@@ -2,9 +2,105 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Meu Site</title>
+    <meta name="viewport" content="width=device-width, initial-scale=0.1">
+    <title>Esfera de Bloch Interativa</title>
+    <style>
+        body { margin: 0; background-color: #0b0f19; color: #fff; font-family: monospace; overflow: hidden; }
+        #info { position: absolute; top: 20px; left: 20px; z-index: 10; pointer-events: none; }
+        .controls { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 10; display: flex; gap: 20px; background: rgba(255,255,255,0.05); padding: 15px; border-radius: 8px; backdrop-filter: blur(5px); }
+        label { display: flex; flex-direction: column; align-items: center; font-size: 12px; }
+        input { width: 120px; margin-top: 5px; }
+    </style>
+    <!-- Carregando Three.js de forma simples -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
 <body>
-    <h1>Site em construção!</h1>
+
+    <div id="info">
+        <h2>ESFERA DE BLOCH</h2>
+        <p id="state-vector">|ψ⟩ = 1.00|0⟩ + 0.00|1⟩</p>
+    </div>
+
+    <div class="controls">
+        <label>θ (Theta - Latitude)
+            <input type="range" id="theta" min="0" max="3.1415" step="0.01" value="0">
+        </label>
+        <label>φ (Phi - Longitude)
+            <input type="range" id="phi" min="0" max="6.283" step="0.01" value="0">
+        </label>
+    </div>
+
+    <script>
+        // Setup básico do Three.js
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+
+        // Criando a Esfera (Aramado)
+        const sphereGeo = new THREE.SphereGeometry(2, 32, 32);
+        const sphereMat = new THREE.MeshBasicMaterial({ color: 0x4444ff, wireframe: true, transparent: true, opacity: 0.15 });
+        const sphere = new THREE.Mesh(sphereGeo, sphereMat);
+        scene.add(sphere);
+
+        // Eixos de referência (X, Y, Z)
+        const axesHelper = new THREE.AxesHelper(3);
+        scene.add(axesHelper);
+
+        // Vetor de Estado (Seta do Spin)
+        const dir = new THREE.Vector3(0, 1, 0); 
+        const origin = new THREE.Vector3(0, 0, 0);
+        const arrowHelper = new THREE.ArrowHelper(dir, origin, 2, 0x00ffcc, 0.4, 0.2);
+        scene.add(arrowHelper);
+
+        camera.position.z = 5;
+        camera.position.y = 1;
+
+        // Elementos da UI
+        const thetaInput = document.getElementById('theta');
+        const phiInput = document.getElementById('phi');
+        const stateText = document.getElementById('state-vector');
+
+        function updateState() {
+            const theta = parseFloat(thetaInput.value);
+            const phi = parseFloat(phiInput.value);
+
+            // Coordenadas esféricas para cartesianas (ajustado para o padrão Three.js onde Y é o eixo vertical)
+            const x = Math.sin(theta) * Math.cos(phi);
+            const z = Math.sin(theta) * Math.sin(phi);
+            const y = Math.cos(theta); // Polo Norte |0> está no topo (+Y)
+
+            // Atualiza a direção da seta
+            arrowHelper.setDirection(new THREE.Vector3(x, y, z));
+
+            // Calcula amplitudes de probabilidade
+            const amp0 = Math.cos(theta / 2).toFixed(2);
+            const amp1 = Math.sin(theta / 2).toFixed(2);
+            
+            stateText.innerHTML = `|ψ⟩ = ${amp0}|0⟩ + e^(i·${phi.toFixed(2)})${amp1}|1⟩`;
+        }
+
+        thetaInput.addEventListener('input', updateState);
+        phiInput.addEventListener('input', updateState);
+
+        // Loop de renderização com leve rotação de fundo para dar profundidade
+        function animate() {
+            requestAnimationFrame(animate);
+            sphere.rotation.y += 0.002;
+            axesHelper.rotation.y += 0.002;
+            arrowHelper.rotation.y += 0.002;
+            renderer.render(scene, camera);
+        }
+
+        animate();
+
+        // Responsividade do Canvas
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    </script>
 </body>
 </html>
