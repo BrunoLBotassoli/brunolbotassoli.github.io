@@ -26,7 +26,7 @@
         #app-container {
             display: flex;
             flex-direction: row;
-            height: calc(100vh - 160px);
+            height: calc(100vh - 180px);
             width: 100vw;
         }
         @media (max-width: 900px) {
@@ -37,7 +37,8 @@
         #canvas-container {
             flex: 1;
             position: relative;
-            background: radial-gradient(circle at center, #151d30 0%, #0b0f19 100%);
+            background: #0b0f19;
+            min-height: 350px;
         }
 
         #panel-container {
@@ -84,7 +85,7 @@
             border-top: 2px solid rgba(255,255,255,0.1);
             padding: 15px 30px;
             box-sizing: border-box;
-            height: 160px;
+            height: 180px;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
@@ -97,7 +98,7 @@
         .qubit-lines-container {
             display: flex;
             flex-direction: column;
-            gap: 12px;
+            gap: 10px;
             margin-top: 10px;
         }
         .qubit-line {
@@ -109,22 +110,26 @@
         .qubit-label {
             font-family: monospace;
             font-weight: bold;
-            min-width: 50px;
+            min-width: 70px;
             cursor: pointer;
-            padding: 2px 6px;
+            padding: 4px 8px;
             border-radius: 4px;
+            border: 1px solid rgba(255,255,255,0.1);
+            background: rgba(255,255,255,0.02);
+            text-align: center;
         }
         .qubit-label.active {
-            background: rgba(0, 255, 204, 0.2);
+            background: rgba(0, 255, 204, 0.15);
             border: 1px solid var(--accent-color);
+            box-shadow: 0 0 8px rgba(0, 255, 204, 0.3);
         }
         .wire {
             flex-grow: 1;
             height: 2px;
-            background: rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.2);
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
             padding-left: 10px;
         }
         .gate-btn {
@@ -153,6 +158,21 @@
             transition: opacity 0.2s;
         }
         .reset-btn:hover { opacity: 0.9; }
+        
+        .reset-single-btn {
+            background: rgba(239, 68, 68, 0.2);
+            border: 1px solid #ef4444;
+            color: #fca5a5;
+            padding: 3px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            transition: all 0.2s;
+        }
+        .reset-single-btn:hover {
+            background: #ef4444;
+            color: white;
+        }
 
         /* Controles manuais */
         .manual-controls {
@@ -212,7 +232,7 @@
     <div id="circuit-area">
         <div class="circuit-title-row">
             <h2 id="lbl-circuit-title">Simulador de Circuito Quântico</h2>
-            <button class="reset-btn" onclick="resetAll()" id="lbl-reset">Reinicializar Qubits</button>
+            <button class="reset-btn" onclick="resetAll()" id="lbl-reset">Reinicializar Todos</button>
         </div>
 
         <div class="qubit-lines-container">
@@ -223,6 +243,7 @@
                     <button class="gate-btn" onclick="applyHadamard(0)">H</button>
                     <button class="gate-btn" onclick="applyX(0)">NOT (X)</button>
                     <button class="gate-btn" onclick="applyMeasure(0)" id="lbl-m0">Medir</button>
+                    <button class="reset-single-btn" onclick="resetSingle(0)" id="lbl-r0">Reset</button>
                 </div>
             </div>
             <!-- Qubit 2 -->
@@ -233,6 +254,7 @@
                     <button class="gate-btn" onclick="applyX(1)">NOT (X)</button>
                     <button class="gate-btn" onclick="applyCNOT(0, 1)">CNOT (q0->q1)</button>
                     <button class="gate-btn" onclick="applyMeasure(1)" id="lbl-m1">Medir</button>
+                    <button class="reset-single-btn" onclick="resetSingle(1)" id="lbl-r1">Reset</button>
                 </div>
             </div>
             <!-- Qubit 3 -->
@@ -243,6 +265,7 @@
                     <button class="gate-btn" onclick="applyX(2)">NOT (X)</button>
                     <button class="gate-btn" onclick="applyCNOT(1, 2)">CNOT (q1->q2)</button>
                     <button class="gate-btn" onclick="applyMeasure(2)" id="lbl-m2">Medir</button>
+                    <button class="reset-single-btn" onclick="resetSingle(2)" id="lbl-r2">Reset</button>
                 </div>
             </div>
         </div>
@@ -257,7 +280,7 @@
                 theta: "θ (Theta - Latitude/Fase Co-latitude)",
                 phi: "φ (Phi - Longitude/Fase Quântica)",
                 circuit: "Simulador de Circuito Quântico",
-                reset: "Reinicializar Qubits",
+                reset: "Reinicializar Todos",
                 measure: "Medir",
                 pure0: "O Qubit está no estado fundamental puro |0⟩. Um colapso clássico dará '0' com 100% de certeza.",
                 pure1: "O Qubit está no estado excitado puro |1⟩. Um colapso clássico dará '1' com 100% de certeza.",
@@ -271,7 +294,7 @@
                 theta: "θ (Theta - Latitude/Co-latitude Phase)",
                 phi: "φ (Phi - Longitude/Quantum Phase)",
                 circuit: "Quantum Circuit Simulator",
-                reset: "Reset Qubits",
+                reset: "Reset All Qubits",
                 measure: "Measure",
                 pure0: "The Qubit is in the pure ground state |0⟩. A classical collapse will yield '0' with 100% certainty.",
                 pure1: "The Qubit is in the pure excited state |1⟩. A classical collapse will yield '1' with 100% certainty.",
@@ -285,7 +308,7 @@
                 theta: "θ (Theta - Latitud)",
                 phi: "φ (Phi - Longitud)",
                 circuit: "Simulador de Circuito Cuántico",
-                reset: "Reiniciar Qubits",
+                reset: "Reiniciar Todos",
                 measure: "Medir",
                 pure0: "El Qubit está en el estado puro fundamental |0⟩. Dará '0' con 100% de certeza al medir.",
                 pure1: "El Qubit está en el estado puro excitado |1⟩. Dará '1' con 100% de certeza al medir.",
@@ -299,7 +322,7 @@
                 theta: "θ (Thêta - Latitude)",
                 phi: "φ (Phi - Longitude)",
                 circuit: "Simulateur de Circuit Quantique",
-                reset: "Réinitialiser",
+                reset: "Réinitialiser Tout",
                 measure: "Mesurer",
                 pure0: "Le Qubit est dans l'état fondamental pur |0⟩. Une mesure donnera '0' à 100%.",
                 pure1: "Le Qubit est dans l'état excité pur |1⟩. Une mesure donnera '1' à 100%.",
@@ -313,7 +336,7 @@
                 theta: "θ (Тета - Широта)",
                 phi: "φ (Фи - Долгота)",
                 circuit: "Квантовый симулятор цепи",
-                reset: "Сбросить кубиты",
+                reset: "Сбросить все кубиты",
                 measure: "Измерить",
                 pure0: "Кубит в чистом основном состоянии |0⟩. Измерение даст '0' со 100% вероятностью.",
                 pure1: "Кубит в возбужденном состоянии |1⟩. Измерение даст '1' со 100% вероятностью.",
@@ -327,7 +350,7 @@
                 theta: "θ (ثيتا - خط العرض)",
                 phi: "φ (فاي - خط الطول)",
                 circuit: "محاكي الدائرة الكمومية",
-                reset: "إعادة ضبط الكيوبت",
+                reset: "إعادة ضبط الكل",
                 measure: "قياس",
                 pure0: "الكيوبت في الحالة الأساسية النقية |0⟩. القياس سيعطي '0' بنسبة 100%.",
                 pure1: "الكيوبت في الحالة المثارة النقية |1⟩. القياس سيعطي '1' بنسبة 100%.",
@@ -339,9 +362,9 @@
                 title: "کره بلاخ",
                 analise: "تحلیل آموزشی:",
                 theta: "θ (تتا - عرض جغرافیایی)",
-                phi: "φ (فی - طول جغرافیایی)",
+                phi: "فی - طول جغرافیایی",
                 circuit: "شبیه‌ساز مدار کوانتومی",
-                reset: "راه‌اندازی مجدد کیوبیت‌ها",
+                reset: "بازنشانی همه",
                 measure: "اندازه‌گیری",
                 pure0: "کیوبیت در حالت پایه خالص |0⟩ قرار دارد. اندازه‌گیری با احتمال ۱۰۰٪ خروجی '۰' می‌دهد.",
                 pure1: "کیوبیت در حالت برانگیخته خالص |1⟩ قرار دارد. اندازه‌گیری خروجی '۱' می‌دهد.",
@@ -355,7 +378,7 @@
                 theta: "θ (西塔 - 纬度)",
                 phi: "φ (斐 - 经度)",
                 circuit: "量子电路模拟器",
-                reset: "重置量子比特",
+                reset: "重置所有",
                 measure: "测量",
                 pure0: "量子比特处于纯基态 |0⟩。测量将有 100% 几率坍缩为 0。",
                 pure1: "量子比特处于纯激发态 |1⟩。测量将有 100% 几率坍缩为 1。",
@@ -368,7 +391,7 @@
         let currentLang = 'pt';
         let activeQubit = 0;
 
-        // Estado dos 3 qubits: guardamos [theta, phi]
+        // Estado inicial de 3 qubits
         let qubitsState = [
             { theta: 0, phi: 0, status: 'pure0' },
             { theta: 0, phi: 0, status: 'pure0' },
@@ -393,39 +416,62 @@
             updateStateVisuals();
         }
 
-        // Configuração Tridimensional (Three.js)
+        // Configuração Tridimensional (Three.js corrigido)
         const container = document.getElementById('canvas-container');
         const scene = new THREE.Scene();
-        const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
-        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-        renderer.setSize(container.clientWidth, container.clientHeight);
+        
+        // Garantindo tamanhos corretos
+        const width = container.clientWidth || window.innerWidth * 0.6;
+        const height = container.clientHeight || 500;
+        
+        const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+        renderer.setSize(width, height);
+        renderer.setClearColor(0x0b0f19, 1);
         container.appendChild(renderer.domElement);
 
         const controls = new THREE.OrbitControls(camera, renderer.domElement);
         controls.enableDamping = true;
         controls.dampingFactor = 0.05;
 
-        // Elementos da Esfera
+        // Grupo da Esfera
         const sphereGroup = new THREE.Group();
         scene.add(sphereGroup);
 
-        const sphereGeo = new THREE.SphereGeometry(2, 32, 16);
-        const sphereMat = new THREE.MeshBasicMaterial({ color: 0x3b82f6, wireframe: true, transparent: true, opacity: 0.1 });
+        // Grid da Esfera (Material Básico para garantir renderização sem luz)
+        const sphereGeo = new THREE.SphereGeometry(2, 30, 15);
+        const sphereMat = new THREE.MeshBasicMaterial({ 
+            color: 0x3b82f6, 
+            wireframe: true, 
+            transparent: true, 
+            opacity: 0.25 
+        });
         const sphere = new THREE.Mesh(sphereGeo, sphereMat);
         sphereGroup.add(sphere);
 
         // Anel Equador
         const ringGeo = new THREE.RingGeometry(1.98, 2.02, 64);
-        const ringMat = new THREE.MeshBasicMaterial({ color: 0x00ffcc, side: THREE.DoubleSide, transparent: true, opacity: 0.3 });
+        const ringMat = new THREE.MeshBasicMaterial({ color: 0x00ffcc, side: THREE.DoubleSide, transparent: true, opacity: 0.4 });
         const equator = new THREE.Mesh(ringGeo, ringMat);
         equator.rotation.x = Math.PI / 2;
         sphereGroup.add(equator);
 
+        // Eixos Cartesianos internos de referência
+        const axesHelper = new THREE.AxesHelper(2.3);
+        sphereGroup.add(axesHelper);
+
         // Vetor (Seta de Estado)
-        const arrowHelper = new THREE.ArrowHelper(new THREE.Vector3(0, 1, 0), new THREE.Vector3(0,0,0), 2, 0x00ffcc, 0.4, 0.15);
+        const arrowHelper = new THREE.ArrowHelper(
+            new THREE.Vector3(0, 1, 0), 
+            new THREE.Vector3(0, 0, 0), 
+            2, 
+            0x00ffcc, 
+            0.4, 
+            0.15
+        );
         sphereGroup.add(arrowHelper);
 
-        camera.position.set(3, 3, 5);
+        camera.position.set(3, 3, 5.5);
 
         // Lógica de Atualização Física/Estética
         function updateStateVisuals() {
@@ -447,9 +493,6 @@
             const amp1 = Math.sin(q.theta / 2).toFixed(2);
             document.getElementById('state-vector').innerHTML = `|ψ⟩ = ${amp0}|0⟩ + e^(i·${q.phi.toFixed(2)})${amp1}|1⟩`;
 
-            // Label do Qubit no circuito
-            document.getElementById(`q${activeQubit}-lbl`).innerText = `q[${activeQubit}]: |ψ⟩`;
-
             // Textos explicativos didáticos baseados no estado
             let explanation = translations[currentLang][q.status] || translations[currentLang].superposition;
             document.getElementById('lbl-explanation').innerText = explanation;
@@ -458,14 +501,14 @@
         // Funções das Portas Lógicas do Simulador
         function applyHadamard(id) {
             let q = qubitsState[id];
-            if (q.theta === 0) { // De |0> para superposição equilibrada
+            if (q.theta === 0) {
                 q.theta = Math.PI / 2;
                 q.phi = 0;
-            } else if (Math.abs(q.theta - Math.PI) < 0.1) { // De |1> para superposição equilibrada com fase
+            } else if (Math.abs(q.theta - Math.PI) < 0.1) {
                 q.theta = Math.PI / 2;
                 q.phi = Math.PI;
             } else {
-                q.theta = 0; // Volta ao estado inicial
+                q.theta = 0;
                 q.phi = 0;
             }
             q.status = 'superposition';
@@ -475,7 +518,7 @@
 
         function applyX(id) {
             let q = qubitsState[id];
-            q.theta = Math.PI - q.theta; // Inverte o eixo vertical (Porta NOT)
+            q.theta = Math.PI - q.theta;
             q.status = q.theta > 1.5 ? 'pure1' : 'pure0';
             updateStateVisuals();
             syncCircuitLabels();
@@ -484,7 +527,6 @@
         function applyCNOT(control, target) {
             let ctrlQ = qubitsState[control];
             let tgtQ = qubitsState[target];
-            // Se o controle está em |1> ou em superposição, aplica-se efeito
             if (ctrlQ.theta > 0.5) { 
                 tgtQ.theta = Math.PI - tgtQ.theta;
                 tgtQ.status = 'entangled';
@@ -498,7 +540,6 @@
             const p0 = Math.pow(Math.cos(q.theta / 2), 2);
             const r = Math.random();
             
-            // Colapso Quântico clássico (Medição)
             if (r < p0) {
                 q.theta = 0;
                 q.phi = 0;
@@ -512,6 +553,16 @@
             syncCircuitLabels();
         }
 
+        // Reinicialização de um único qubit
+        function resetSingle(id) {
+            qubitsState[id] = { theta: 0, phi: 0, status: 'pure0' };
+            if (id === activeQubit) {
+                updateStateVisuals();
+            }
+            syncCircuitLabels();
+        }
+
+        // Reinicialização de todos
         function resetAll() {
             qubitsState = [
                 { theta: 0, phi: 0, status: 'pure0' },
@@ -553,26 +604,33 @@
             updateStateVisuals();
         });
 
-        // Loop de Renderização com Rotação Contínua Automatizada
+        // Rotação Automática Lenta (Sem bloquear o controle do mouse)
         function animate() {
             requestAnimationFrame(animate);
             
-            // Mantém a rotação automática da esfera no espaço tridimensional
-            sphereGroup.rotation.y += 0.005;
+            // Faz a esfera rotacionar lentamente de forma contínua
+            sphereGroup.rotation.y += 0.003;
 
             controls.update();
             renderer.render(scene, camera);
         }
 
-        // Setup inicial
+        // Garante redimensionamento correto
+        function handleResize() {
+            const w = container.clientWidth;
+            const h = container.clientHeight;
+            camera.aspect = w / h;
+            camera.updateProjectionMatrix();
+            renderer.setSize(w, h);
+        }
+
+        // Inicialização
         setLanguage('pt');
         animate();
 
-        window.addEventListener('resize', () => {
-            camera.aspect = container.clientWidth / container.clientHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(container.clientWidth, container.clientHeight);
-        });
+        window.addEventListener('resize', handleResize);
+        // Pequeno atraso para capturar as dimensões reais após o render da página
+        setTimeout(handleResize, 100);
     </script>
 </body>
 </html>
