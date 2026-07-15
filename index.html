@@ -3,634 +3,484 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quantum Lab - Hadamard & Bloch</title>
+    <title>Quantum Lab - Álgebra & Bloch</title>
+    
+    <!-- Three.js -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    
+    <!-- MathJax -->
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script>
+        window.MathJax = {
+            startup: {
+                pageReady: () => {
+                    return MathJax.startup.defaultPageReady().then(() => {
+                        console.log('MathJax inicializado.');
+                    });
+                }
+            }
+        };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
     <style>
         :root {
-            --bg-color: #0b0f19;
-            --panel-bg: rgba(15, 23, 42, 0.9);
-            --accent-color: #00ffcc;
-            --text-color: #f1f5f9;
+            --bg: #0b0f19; --panel: rgba(15, 23, 42, 0.95); --accent: #0ea5e9; 
+            --cnot-color: #10b981; --measure-color: #64748b; --text: #f1f5f9;
         }
+        
         body { 
-            margin: 0; 
-            background-color: var(--bg-color); 
-            color: var(--text-color); 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            overflow-x: hidden;
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh;
+            margin: 0; background-color: var(--bg); color: var(--text); 
+            font-family: 'Segoe UI', Tahoma, sans-serif; 
+            display: flex; flex-direction: column; 
+            height: 100vh; overflow: hidden; 
+        }
+
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+        
+        #top-half { 
+            flex: 1; 
+            display: flex; flex-direction: row; 
+            border-bottom: 2px solid rgba(255,255,255,0.1); 
+            overflow: hidden;
+            background: var(--bg);
         }
         
-        /* Layout Geral Split */
-        #app-container {
-            display: flex;
-            flex-direction: row;
-            height: calc(100vh - 180px);
-            width: 100vw;
-        }
-        @media (max-width: 900px) {
-            #app-container { flex-direction: column; height: auto; }
-            #canvas-container { height: 400px; }
-        }
-
-        #canvas-container {
-            flex: 1;
-            position: relative;
-            background: #0b0f19;
-            min-height: 350px;
-        }
-
-        #panel-container {
-            width: 400px;
-            background: var(--panel-bg);
-            border-left: 1px solid rgba(255,255,255,0.1);
-            padding: 20px;
-            overflow-y: auto;
-            box-sizing: border-box;
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
-
-        /* Seletor de Idiomas */
-        .lang-selector {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 5px;
-            margin-bottom: 10px;
-        }
-        .lang-btn {
-            background: rgba(255,255,255,0.05);
-            border: 1px solid rgba(255,255,255,0.1);
-            color: var(--text-color);
-            padding: 4px 8px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 0.75rem;
-            transition: all 0.2s;
-        }
-        .lang-btn.active, .lang-btn:hover {
-            background: var(--accent-color);
-            color: var(--bg-color);
-            border-color: var(--accent-color);
-        }
-
-        h2 { margin: 0; font-size: 1.2rem; color: var(--accent-color); letter-spacing: 1px; }
-        #state-vector { font-family: monospace; font-size: 1rem; background: rgba(0,0,0,0.3); padding: 8px; border-radius: 6px; margin: 10px 0; border-left: 3px solid var(--accent-color); }
-
-        /* Circuito Quântico */
-        #circuit-area {
-            background: rgba(15, 23, 42, 0.95);
-            border-top: 2px solid rgba(255,255,255,0.1);
-            padding: 15px 30px;
-            box-sizing: border-box;
-            height: 180px;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-        }
-        .circuit-title-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .qubit-lines-container {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            margin-top: 10px;
-        }
-        .qubit-line {
-            display: flex;
-            align-items: center;
-            gap: 15px;
+        #canvas-container { 
+            height: 100%; 
+            aspect-ratio: 1 / 1; 
+            max-width: 100%;
+            background: radial-gradient(circle, #1e293b 0%, #06080d 100%); 
+            flex-shrink: 0; 
             position: relative;
         }
-        .qubit-label {
-            font-family: monospace;
-            font-weight: bold;
-            min-width: 70px;
-            cursor: pointer;
-            padding: 4px 8px;
-            border-radius: 4px;
-            border: 1px solid rgba(255,255,255,0.1);
-            background: rgba(255,255,255,0.02);
-            text-align: center;
-        }
-        .qubit-label.active {
-            background: rgba(0, 255, 204, 0.15);
-            border: 1px solid var(--accent-color);
-            box-shadow: 0 0 8px rgba(0, 255, 204, 0.3);
-        }
-        .wire {
-            flex-grow: 1;
-            height: 2px;
-            background: rgba(255,255,255,0.2);
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding-left: 10px;
-        }
-        .gate-btn {
-            background: #1e293b;
-            border: 1px solid var(--accent-color);
-            color: var(--text-color);
-            border-radius: 4px;
-            cursor: pointer;
-            padding: 4px 10px;
-            font-size: 0.8rem;
-            font-family: monospace;
-            transition: all 0.2s;
-        }
-        .gate-btn:hover {
-            background: var(--accent-color);
-            color: var(--bg-color);
-        }
-        .reset-btn {
-            background: #ef4444;
-            color: white;
-            border: none;
-            padding: 5px 12px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 0.8rem;
-            transition: opacity 0.2s;
-        }
-        .reset-btn:hover { opacity: 0.9; }
         
-        .reset-single-btn {
-            background: rgba(239, 68, 68, 0.2);
-            border: 1px solid #ef4444;
-            color: #fca5a5;
-            padding: 3px 8px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 0.75rem;
-            transition: all 0.2s;
+        #panel-container { 
+            flex: 1; 
+            background: var(--panel); border-left: 1px solid rgba(255,255,255,0.1); 
+            padding: 25px 40px; box-sizing: border-box; 
+            overflow-y: auto; 
         }
-        .reset-single-btn:hover {
-            background: #ef4444;
-            color: white;
+        
+        h2 { margin: 0; font-size: 1.2rem; color: var(--accent); }
+        #state-vector { font-family: monospace; font-size: 1.1rem; background: rgba(0,0,0,0.3); padding: 8px; border-left: 3px solid var(--accent); margin: 10px 0; }
+        
+        #math-display { 
+            background: rgba(0,0,0,0.4); padding: 15px; border-radius: 8px; 
+            font-size: 0.95rem; min-height: 70px; overflow-x: auto; 
+            margin-bottom: 20px; display: flex; align-items: center; justify-content: center;
         }
 
-        /* Controles manuais */
-        .manual-controls {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
+        .lang-selector { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 20px; }
+        .lang-btn { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: var(--text); padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 0.75rem; font-weight: bold;}
+        .lang-btn.active { background: var(--accent); color: var(--bg); }
+
+        .manual-controls { display: flex; flex-direction: column; gap: 15px; margin-top: 10px; max-width: 600px;}
+        input[type=range] { width: 100%; accent-color: var(--accent); }
+
+        .tooltip { position: relative; cursor: help; border-bottom: 1px dotted var(--accent); font-weight: bold; }
+        .tooltip:hover::after {
+            content: attr(data-tip); position: absolute; bottom: 120%; left: 50%; transform: translateX(-50%);
+            background: #1e293b; border: 1px solid var(--accent); color: #fff; padding: 8px;
+            border-radius: 6px; font-size: 0.8rem; width: 220px; z-index: 100; text-align: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3); font-family: sans-serif; font-weight: normal;
         }
-        input[type=range] {
-            width: 100%;
-            accent-color: var(--accent-color);
+
+        #bottom-half { 
+            height: 220px; flex-shrink: 0;
+            display: flex; flex-direction: row; 
+            background: #1e293b; box-sizing: border-box; 
+        }
+        
+        #toolbar { 
+            width: 220px; flex-shrink: 0;
+            display: flex; flex-direction: column; gap: 10px; 
+            padding: 15px; border-right: 1px solid rgba(255,255,255,0.1); 
+        }
+        
+        .toolbar-row { display: flex; gap: 5px; align-items: center; }
+        .toolbar-row span { font-family: monospace; font-weight: bold; width: 30px; cursor: pointer; padding: 2px; border-radius: 4px; text-align: center;}
+        .toolbar-row span.active { color: var(--accent); background: rgba(14, 165, 233, 0.2); }
+        .btn-gate { background: var(--bg); border: 1px solid var(--accent); color: var(--accent); cursor: pointer; padding: 4px; border-radius: 4px; font-family: monospace; font-size: 0.8rem; width: 35px; }
+        .btn-gate:hover { background: var(--accent); color: var(--bg); }
+        .btn-reset { background: #ef4444; color: white; border: none; padding: 8px; border-radius: 4px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 15px; }
+        
+        #timeline-container { 
+            flex: 1; padding: 15px 20px; display: flex; position: relative; 
+            overflow-x: auto; overflow-y: hidden;
+        }
+        
+        .timeline-grid { display: grid; grid-template-rows: 40px 40px 40px 20px 20px; grid-auto-columns: 50px; grid-auto-flow: column; position: relative; align-items: center; }
+        
+        .wire-q { position: absolute; width: 100%; height: 1px; background: #64748b; z-index: 1; }
+        .wire-q.w0 { top: 20px; } .wire-q.w1 { top: 60px; } .wire-q.w2 { top: 100px; }
+        .wire-c { position: absolute; width: 100%; height: 3px; border-top: 1px solid #94a3b8; border-bottom: 1px solid #94a3b8; top: 150px; z-index: 1; }
+
+        .gate-box { width: 30px; height: 30px; background: rgba(14, 165, 233, 0.2); border: 1px solid var(--accent); color: var(--text); display: flex; justify-content: center; align-items: center; font-family: monospace; z-index: 2; margin: 0 auto; position: relative; cursor: pointer;}
+        .gate-x { background: rgba(16, 185, 129, 0.2); border-color: var(--cnot-color); }
+        .gate-m { background: #334155; border-color: var(--measure-color); }
+        
+        .cnot-dot { width: 12px; height: 12px; border-radius: 50%; background: var(--cnot-color); z-index: 2; margin: 0 auto; }
+        .cnot-target { width: 24px; height: 24px; border-radius: 50%; border: 1px solid var(--cnot-color); z-index: 2; margin: 0 auto; display: flex; justify-content: center; align-items: center; color: var(--cnot-color); font-size: 1.2rem; }
+        .cnot-target::after { content: "⊕"; position: absolute; }
+        .cnot-v-line { position: absolute; width: 2px; background: var(--cnot-color); z-index: 1; left: 50%; transform: translateX(-50%); }
+        
+        .measure-v-line { position: absolute; width: 3px; border-left: 1px solid var(--measure-color); border-right: 1px solid var(--measure-color); z-index: 1; left: 50%; transform: translateX(-50%); }
+        .c-bit-text { font-family: monospace; font-size: 0.7rem; color: #cbd5e1; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); }
+
+        @media (max-width: 800px) {
+            body { height: auto; overflow: auto; }
+            #top-half { flex-direction: column; }
+            #canvas-container { width: 100%; height: auto; }
+            #panel-container { width: 100%; border-left: none; flex: none;}
+            #bottom-half { flex-direction: column; height: auto; }
+            #toolbar { width: 100%; border-right: none; border-bottom: 1px solid rgba(255,255,255,0.1); }
         }
     </style>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 </head>
 <body>
 
-    <div id="app-container">
-        <!-- Esfera 3D -->
+    <div id="top-half">
         <div id="canvas-container"></div>
 
-        <!-- Painel de Dados Lateral -->
         <div id="panel-container">
             <div class="lang-selector">
-                <button class="lang-btn active" onclick="setLanguage('pt')">PT</button>
-                <button class="lang-btn" onclick="setLanguage('en')">EN</button>
-                <button class="lang-btn" onclick="setLanguage('es')">ES</button>
-                <button class="lang-btn" onclick="setLanguage('fr')">FR</button>
-                <button class="lang-btn" onclick="setLanguage('ru')">RU</button>
-                <button class="lang-btn" onclick="setLanguage('ar')">AR</button>
-                <button class="lang-btn" onclick="setLanguage('fa')">FA</button>
-                <button class="lang-btn" onclick="setLanguage('zh')">ZH</button>
+                <button class="lang-btn active" onclick="setLang('pt')">PT</button>
+                <button class="lang-btn" onclick="setLang('en')">EN</button>
+                <button class="lang-btn" onclick="setLang('es')">ES</button>
+                <button class="lang-btn" onclick="setLang('fr')">FR</button>
+                <button class="lang-btn" onclick="setLang('ru')">RU</button>
+                <button class="lang-btn" onclick="setLang('ar')">AR</button>
+                <button class="lang-btn" onclick="setLang('fa')">FA</button>
+                <button class="lang-btn" onclick="setLang('zh')">ZH</button>
             </div>
 
             <h2 id="lbl-title">ESFERA DE BLOCH</h2>
-            <div id="state-vector">|ψ⟩ = 1.00|0⟩ + 0.00|1⟩</div>
+            
+            <!-- Inicialmente limpos para evitar código feio antes do MathJax carregar -->
+            <div id="state-vector">|ψ⟩ = 1.00|0⟩</div>
 
-            <div>
-                <strong id="lbl-analise">Análise Didática:</strong>
-                <p id="lbl-explanation" style="font-size: 0.9rem; line-height: 1.4; opacity: 0.9;"></p>
+            <div id="math-display">
+                Carregando simulador matemático...
             </div>
 
-            <hr style="border: 0; border-top: 1px solid rgba(255,255,255,0.1);">
-
-            <!-- Controles Manuais -->
             <div class="manual-controls">
-                <label id="lbl-theta">θ (Latitude)</label>
+                <label><span class="tooltip" id="tip-theta" data-tip="Ângulo entre os pólos. Controla a chance de medir 0 ou 1.">θ (Latitude / Probabilidade)</span></label>
                 <input type="range" id="theta" min="0" max="3.1415" step="0.01" value="0">
                 
-                <label id="lbl-phi">φ (Longitude)</label>
+                <label><span class="tooltip" id="tip-phi" data-tip="Fase relativa quântica. Essencial para interferência.">φ (Longitude / Fase Quântica)</span></label>
                 <input type="range" id="phi" min="0" max="6.2831" step="0.01" value="0">
             </div>
+
+            <button class="btn-reset" id="btn-reset" onclick="resetCircuit()">Reset Circuito</button>
         </div>
     </div>
 
-    <!-- Simulador de Circuitos Quânticos -->
-    <div id="circuit-area">
-        <div class="circuit-title-row">
-            <h2 id="lbl-circuit-title">Simulador de Circuito Quântico</h2>
-            <button class="reset-btn" onclick="resetAll()" id="lbl-reset">Reinicializar Todos</button>
+    <div id="bottom-half">
+        <div id="toolbar">
+            <h3 id="lbl-tools" style="margin:0; font-size: 1rem; color: #cbd5e1;">Ferramentas</h3>
+            <div class="toolbar-row">
+                <span id="lbl-q0" class="active" onclick="setActiveQubit(0)">q_0</span>
+                <button class="btn-gate tooltip" id="tip-h0" data-tip="Hadamard: Cria superposição." onclick="addGate('H', 0)">H</button>
+                <button class="btn-gate tooltip" id="tip-x0" data-tip="Pauli-X: Inverte estado (NOT)." onclick="addGate('X', 0)">X</button>
+                <button class="btn-gate tooltip" id="tip-m0" data-tip="Medir: Colapsa em 0 ou 1." onclick="addGate('M', 0)">M</button>
+            </div>
+            <div class="toolbar-row">
+                <span id="lbl-q1" onclick="setActiveQubit(1)">q_1</span>
+                <button class="btn-gate" onclick="addGate('H', 1)">H</button>
+                <button class="btn-gate" onclick="addGate('X', 1)">X</button>
+                <button class="btn-gate" onclick="addGate('M', 1)">M</button>
+            </div>
+            <div class="toolbar-row">
+                <span id="lbl-q2" onclick="setActiveQubit(2)">q_2</span>
+                <button class="btn-gate" onclick="addGate('H', 2)">H</button>
+                <button class="btn-gate" onclick="addGate('X', 2)">X</button>
+                <button class="btn-gate" onclick="addGate('M', 2)">M</button>
+            </div>
+            <hr style="border-color: rgba(255,255,255,0.1); width: 100%;">
+            <div class="toolbar-row">
+                <span style="width: 50px;">CNOT</span>
+                <button class="btn-gate tooltip" id="tip-cnot1" data-tip="Cria emaranhamento." style="width:auto;" onclick="addGate('CNOT', 0, 1)">0→1</button>
+                <button class="btn-gate" style="width:auto;" onclick="addGate('CNOT', 1, 2)">1→2</button>
+            </div>
         </div>
-
-        <div class="qubit-lines-container">
-            <!-- Qubit 1 -->
-            <div class="qubit-line">
-                <div class="qubit-label active" id="q0-lbl" onclick="selectQubit(0)">q[0]: |0⟩</div>
-                <div class="wire">
-                    <button class="gate-btn" onclick="applyHadamard(0)">H</button>
-                    <button class="gate-btn" onclick="applyX(0)">NOT (X)</button>
-                    <button class="gate-btn" onclick="applyMeasure(0)" id="lbl-m0">Medir</button>
-                    <button class="reset-single-btn" onclick="resetSingle(0)" id="lbl-r0">Reset</button>
-                </div>
-            </div>
-            <!-- Qubit 2 -->
-            <div class="qubit-line">
-                <div class="qubit-label" id="q1-lbl" onclick="selectQubit(1)">q[1]: |0⟩</div>
-                <div class="wire">
-                    <button class="gate-btn" onclick="applyHadamard(1)">H</button>
-                    <button class="gate-btn" onclick="applyX(1)">NOT (X)</button>
-                    <button class="gate-btn" onclick="applyCNOT(0, 1)">CNOT (q0->q1)</button>
-                    <button class="gate-btn" onclick="applyMeasure(1)" id="lbl-m1">Medir</button>
-                    <button class="reset-single-btn" onclick="resetSingle(1)" id="lbl-r1">Reset</button>
-                </div>
-            </div>
-            <!-- Qubit 3 -->
-            <div class="qubit-line">
-                <div class="qubit-label" id="q2-lbl" onclick="selectQubit(2)">q[2]: |0⟩</div>
-                <div class="wire">
-                    <button class="gate-btn" onclick="applyHadamard(2)">H</button>
-                    <button class="gate-btn" onclick="applyX(2)">NOT (X)</button>
-                    <button class="gate-btn" onclick="applyCNOT(1, 2)">CNOT (q1->q2)</button>
-                    <button class="gate-btn" onclick="applyMeasure(2)" id="lbl-m2">Medir</button>
-                    <button class="reset-single-btn" onclick="resetSingle(2)" id="lbl-r2">Reset</button>
-                </div>
-            </div>
+        
+        <div id="timeline-container">
+            <div class="wire-q w0"></div>
+            <div class="wire-q w1"></div>
+            <div class="wire-q w2"></div>
+            <div class="wire-c"></div>
+            <div class="timeline-grid" id="circuit-grid"></div>
         </div>
     </div>
 
     <script>
-        // Dicionário de Idiomas
-        const translations = {
-            pt: {
-                title: "ESFERA DE BLOCH",
-                analise: "Análise Didática:",
-                theta: "θ (Theta - Latitude/Fase Co-latitude)",
-                phi: "φ (Phi - Longitude/Fase Quântica)",
-                circuit: "Simulador de Circuito Quântico",
-                reset: "Reinicializar Todos",
-                measure: "Medir",
-                pure0: "O Qubit está no estado fundamental puro |0⟩. Um colapso clássico dará '0' com 100% de certeza.",
-                pure1: "O Qubit está no estado excitado puro |1⟩. Um colapso clássico dará '1' com 100% de certeza.",
-                superposition: "Estado de Superposição Quântica. O qubit está suspenso entre o |0⟩ e o |1⟩. Portas como Hadamard (H) o colocam nesse estado matemático dinâmico.",
-                entangled: "Atenção: Este Qubit sofreu emaranhamento via CNOT. Seu estado está correlacionado à outra partícula quântica!",
-                measuring: "Qubit medido! O estado colapsou para um valor definido."
-            },
-            en: {
-                title: "BLOCH SPHERE",
-                analise: "Didactic Analysis:",
-                theta: "θ (Theta - Latitude/Co-latitude Phase)",
-                phi: "φ (Phi - Longitude/Quantum Phase)",
-                circuit: "Quantum Circuit Simulator",
-                reset: "Reset All Qubits",
-                measure: "Measure",
-                pure0: "The Qubit is in the pure ground state |0⟩. A classical collapse will yield '0' with 100% certainty.",
-                pure1: "The Qubit is in the pure excited state |1⟩. A classical collapse will yield '1' with 100% certainty.",
-                superposition: "Quantum Superposition State. The qubit is suspended between |0⟩ and |1⟩. Gates like Hadamard (H) place it here.",
-                entangled: "Warning: This Qubit is entangled via CNOT! Its state is physically correlated to another qubit.",
-                measuring: "Qubit measured! The state collapsed to a definite classical value."
-            },
-            es: {
-                title: "ESFERA DE BLOCH",
-                analise: "Análisis Didáctico:",
-                theta: "θ (Theta - Latitud)",
-                phi: "φ (Phi - Longitud)",
-                circuit: "Simulador de Circuito Cuántico",
-                reset: "Reiniciar Todos",
-                measure: "Medir",
-                pure0: "El Qubit está en el estado puro fundamental |0⟩. Dará '0' con 100% de certeza al medir.",
-                pure1: "El Qubit está en el estado puro excitado |1⟩. Dará '1' con 100% de certeza al medir.",
-                superposition: "Superposición Cuántica. El qubit flota entre |0⟩ y |1⟩ simultáneamente hasta ser medido.",
-                entangled: "¡Emaranamiento detectado! Este Qubit está correlacionado por una compuerta CNOT.",
-                measuring: "¡Qubit medido! El estado ha colapsado."
-            },
-            fr: {
-                title: "SPHÈRE DE BLOCH",
-                analise: "Analyse Didactique :",
-                theta: "θ (Thêta - Latitude)",
-                phi: "φ (Phi - Longitude)",
-                circuit: "Simulateur de Circuit Quantique",
-                reset: "Réinitialiser Tout",
-                measure: "Mesurer",
-                pure0: "Le Qubit est dans l'état fondamental pur |0⟩. Une mesure donnera '0' à 100%.",
-                pure1: "Le Qubit est dans l'état excité pur |1⟩. Une mesure donnera '1' à 100%.",
-                superposition: "Superposition Quantique. Le qubit oscille entre |0⟩ et |1⟩ avant la mesure.",
-                entangled: "Intrication Quantique ! Ce qubit est corrélé à un autre par une porte CNOT.",
-                measuring: "Qubit mesuré ! L'état s'est effondré."
-            },
-            ru: {
-                title: "СФЕРА БЛОХА",
-                analise: "Дидактический анализ:",
-                theta: "θ (Тета - Широта)",
-                phi: "φ (Фи - Долгота)",
-                circuit: "Квантовый симулятор цепи",
-                reset: "Сбросить все кубиты",
-                measure: "Измерить",
-                pure0: "Кубит в чистом основном состоянии |0⟩. Измерение даст '0' со 100% вероятностью.",
-                pure1: "Кубит в возбужденном состоянии |1⟩. Измерение даст '1' со 100% вероятностью.",
-                superposition: "Квантовая суперпозиция. Кубит находится одновременно в |0⟩ и |1⟩.",
-                entangled: "Квантовая запутанность! Этот кубит связан с другим через CNOT.",
-                measuring: "Кубит измерен! Произошел коллапс волновой функции."
-            },
-            ar: {
-                title: "كرة بلوخ",
-                analise: "التحليل التعليمي:",
-                theta: "θ (ثيتا - خط العرض)",
-                phi: "φ (فاي - خط الطول)",
-                circuit: "محاكي الدائرة الكمومية",
-                reset: "إعادة ضبط الكل",
-                measure: "قياس",
-                pure0: "الكيوبت في الحالة الأساسية النقية |0⟩. القياس سيعطي '0' بنسبة 100%.",
-                pure1: "الكيوبت في الحالة المثارة النقية |1⟩. القياس سيعطي '1' بنسبة 100%.",
-                superposition: "حالة التراكب الكمي. الكيوبت معلق بين |0⟩ و |1⟩ حتى قياسه.",
-                entangled: "الكيوبت متشابك عبر بوابة CNOT مع جسيم آخر!",
-                measuring: "تم القياس! انهارت الدالة الموجية."
-            },
-            fa: {
-                title: "کره بلاخ",
-                analise: "تحلیل آموزشی:",
-                theta: "θ (تتا - عرض جغرافیایی)",
-                phi: "فی - طول جغرافیایی",
-                circuit: "شبیه‌ساز مدار کوانتومی",
-                reset: "بازنشانی همه",
-                measure: "اندازه‌گیری",
-                pure0: "کیوبیت در حالت پایه خالص |0⟩ قرار دارد. اندازه‌گیری با احتمال ۱۰۰٪ خروجی '۰' می‌دهد.",
-                pure1: "کیوبیت در حالت برانگیخته خالص |1⟩ قرار دارد. اندازه‌گیری خروجی '۱' می‌دهد.",
-                superposition: "در حالت درهم‌تنیدگی/ابرمرتبه کوانتومی. کیوبیت در حالت میانی معلق است.",
-                entangled: "این کیوبیت درهم‌تنیده است! حالت آن به کیوبیت دیگر وابسته است.",
-                measuring: "اندازه‌گیری شد! فروپاشی حالت کوانتومی رخ داد."
-            },
-            zh: {
-                title: "布洛赫球面",
-                analise: "教学分析:",
-                theta: "θ (西塔 - 纬度)",
-                phi: "φ (斐 - 经度)",
-                circuit: "量子电路模拟器",
-                reset: "重置所有",
-                measure: "测量",
-                pure0: "量子比特处于纯基态 |0⟩。测量将有 100% 几率坍缩为 0。",
-                pure1: "量子比特处于纯激发态 |1⟩。测量将有 100% 几率坍缩为 1。",
-                superposition: "量子叠加态。利用哈达玛门（H）可以使量子比特悬浮于二者之间。",
-                entangled: "纠缠态！该量子比特通过 CNOT 门与其它比特发生纠缠。",
-                measuring: "测量完成！波函数发生坍缩。"
-            }
+        const dict = {
+            pt: { title: "ESFERA DE BLOCH", math: "Inicie o circuito ou use os controles.", tools: "Ferramentas", reset: "Reset Circuito", tipTh: "Ângulo entre os pólos.", tipPh: "Fase relativa quântica.", lblTh: "θ (Latitude / Probabilidade)", lblPh: "φ (Longitude / Fase Quântica)", tH: "Hadamard: Cria superposição.", tX: "Pauli-X: Inverte estado.", tM: "Medir: Colapsa em 0 ou 1.", tC: "CNOT: Cria emaranhamento.", mMan: "Manual", mMeas: "Medição", mEnt: "Emaranhado" },
+            en: { title: "BLOCH SPHERE", math: "Start the circuit or use manual controls.", tools: "Tools", reset: "Reset Circuit", tipTh: "Angle between poles.", tipPh: "Quantum relative phase.", lblTh: "θ (Latitude / Probability)", lblPh: "φ (Longitude / Phase)", tH: "Hadamard: Creates superposition.", tX: "Pauli-X: Flips state.", tM: "Measure: Collapses to 0 or 1.", tC: "CNOT: Creates entanglement.", mMan: "Manual", mMeas: "Measure", mEnt: "Entangled" },
+            es: { title: "ESFERA DE BLOCH", math: "Inicie el circuito o use controles.", tools: "Herramientas", reset: "Reiniciar Circuito", tipTh: "Ángulo entre polos.", tipPh: "Fase cuántica relativa.", lblTh: "θ (Latitud / Probabilidad)", lblPh: "φ (Longitud / Fase)", tH: "Hadamard: Crea superposición.", tX: "Pauli-X: Invierte estado.", tM: "Medir: Colapsa en 0 o 1.", tC: "CNOT: Crea entrelazamiento.", mMan: "Manual", mMeas: "Medición", mEnt: "Entrelazado" },
+            fr: { title: "SPHÈRE DE BLOCH", math: "Démarrez le circuit ou utilisez les contrôles.", tools: "Outils", reset: "Réinitialiser", tipTh: "Angle entre les pôles.", tipPh: "Phase quantique relative.", lblTh: "θ (Latitude / Probabilité)", lblPh: "φ (Longitude / Phase)", tH: "Hadamard: Crée superposition.", tX: "Pauli-X: Inverse l'état.", tM: "Mesurer: S'effondre.", tC: "CNOT: Intrication.", mMan: "Manuel", mMeas: "Mesure", mEnt: "Intriqué" },
+            ru: { title: "СФЕРА БЛОХА", math: "Запустите цепь или используйте контроль.", tools: "Инструменты", reset: "Сброс", tipTh: "Угол между полюсами.", tipPh: "Квантовая фаза.", lblTh: "θ (Широта / Вероятность)", lblPh: "φ (Долгота / Фаза)", tH: "Адамар: Суперпозиция.", tX: "Pauli-X: Инверсия.", tM: "Измерение.", tC: "CNOT: Запутанность.", mMan: "Ручной", mMeas: "Измерение", mEnt: "Запутанный" },
+            ar: { title: "كرة بلوخ", math: "ابدأ الدائرة أو استخدم التحكم.", tools: "أدوات", reset: "إعادة ضبط", tipTh: "الزاوية بين الأقطاب.", tipPh: "المرحلة الكمومية.", lblTh: "θ (خط العرض)", lblPh: "φ (خط الطول)", tH: "هادامارد: تراكب.", tX: "Pauli-X: عكس.", tM: "قياس.", tC: "CNOT: تشابك.", mMan: "يدوي", mMeas: "قياس", mEnt: "متشابك" },
+            fa: { title: "کره بلاخ", math: "مدار را شروع کنید یا دستی تنظیم کنید.", tools: "ابزارها", reset: "بازنشانی", tipTh: "زاویه قطب‌ها.", tipPh: "فاز کوانتومی.", lblTh: "θ (عرض جغرافیایی)", lblPh: "φ (طول جغرافیایی)", tH: "هادامارد: برهم‌نهی.", tX: "Pauli-X: وارونگی.", tM: "اندازه‌گیری.", tC: "CNOT: درهم‌تنیدگی.", mMan: "دستی", mMeas: "اندازه‌گیری", mEnt: "درهم‌تنیده" },
+            zh: { title: "布洛赫球面", math: "启动电路或使用手动控制。", tools: "工具", reset: "重置", tipTh: "极点之间的角度。", tipPh: "量子相位。", lblTh: "θ (纬度 / 概率)", lblPh: "φ (经度 / 相位)", tH: "Hadamard: 叠加态。", tX: "Pauli-X: 反转。", tM: "测量。", tC: "CNOT: 纠缠。", mMan: "手动", mMeas: "测量", mEnt: "纠缠态" }
         };
-
+        
         let currentLang = 'pt';
-        let activeQubit = 0;
+        let lastUpdateType = 'none';
+        let lastManualData = {th: 0, ph: 0};
 
-        // Estado inicial de 3 qubits
-        let qubitsState = [
-            { theta: 0, phi: 0, status: 'pure0' },
-            { theta: 0, phi: 0, status: 'pure0' },
-            { theta: 0, phi: 0, status: 'pure0' }
-        ];
-
-        function setLanguage(lang) {
-            currentLang = lang;
-            document.querySelectorAll('.lang-btn').forEach(btn => btn.classList.remove('active'));
-            event.target.classList.add('active');
-
-            document.getElementById('lbl-title').innerText = translations[lang].title;
-            document.getElementById('lbl-analise').innerText = translations[lang].analise;
-            document.getElementById('lbl-theta').innerText = translations[lang].theta;
-            document.getElementById('lbl-phi').innerText = translations[lang].phi;
-            document.getElementById('lbl-circuit-title').innerText = translations[lang].circuit;
-            document.getElementById('lbl-reset').innerText = translations[lang].reset;
-            
-            for(let i=0; i<3; i++) {
-                document.getElementById('lbl-m'+i).innerText = translations[lang].measure;
+        function renderMathSafe() {
+            if (typeof MathJax !== 'undefined' && MathJax.typesetPromise) {
+                MathJax.typesetPromise().catch(err => console.log('MathJax deferred', err));
             }
-            updateStateVisuals();
         }
 
-        // Configuração Tridimensional (Three.js corrigido)
+        function setLang(l) {
+            currentLang = l;
+            document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
+            // Procura o botão correspondente ao idioma e ativa
+            document.querySelectorAll('.lang-btn').forEach(b => {
+                if(b.innerText.toLowerCase() === l || (l === 'pt' && b.innerText === 'PT')) b.classList.add('active');
+            });
+            
+            document.getElementById('lbl-title').innerText = dict[l].title;
+            document.getElementById('lbl-tools').innerText = dict[l].tools;
+            document.getElementById('btn-reset').innerText = dict[l].reset;
+            document.getElementById('tip-theta').innerText = dict[l].lblTh;
+            document.getElementById('tip-theta').setAttribute('data-tip', dict[l].tipTh);
+            document.getElementById('tip-phi').innerText = dict[l].lblPh;
+            document.getElementById('tip-phi').setAttribute('data-tip', dict[l].tipPh);
+            
+            document.getElementById('tip-h0').setAttribute('data-tip', dict[l].tH);
+            document.getElementById('tip-x0').setAttribute('data-tip', dict[l].tX);
+            document.getElementById('tip-m0').setAttribute('data-tip', dict[l].tM);
+            document.getElementById('tip-cnot1').setAttribute('data-tip', dict[l].tC);
+            
+            if (lastUpdateType === 'none') {
+                document.getElementById('math-display').innerHTML = `$$ \\text{${dict[l].math}} $$`;
+                renderMathSafe();
+            } else if (lastUpdateType === 'manual') {
+                document.getElementById('math-display').innerHTML = `$$ \\text{${dict[currentLang].mMan} (q}_{${activeQubit}}): \\theta=${lastManualData.th.toFixed(2)}, \\varphi=${lastManualData.ph.toFixed(2)} $$`;
+                renderMathSafe();
+            } else {
+                processHistory(); 
+            }
+            updateSphere(activeQubit);
+        }
+
+        const C = {
+            add: (a, b) => ({ r: a.r + b.r, i: a.i + b.i }), sub: (a, b) => ({ r: a.r - b.r, i: a.i - b.i }),
+            mulReal: (a, x) => ({ r: a.r * x, i: a.i * x }), mag: a => Math.sqrt(a.r * a.r + a.i * a.i), arg: a => Math.atan2(a.i, a.r)
+        };
+
+        let circuitHistory = [];
+        let qubitsState = [];
+        let activeQubit = 0;
+
+        function initStates() {
+            qubitsState = [{ a: {r: 1, i: 0}, b: {r: 0, i: 0}, ent: false }, { a: {r: 1, i: 0}, b: {r: 0, i: 0}, ent: false }, { a: {r: 1, i: 0}, b: {r: 0, i: 0}, ent: false }];
+        }
+        initStates();
+
+        function setActiveQubit(id) {
+            activeQubit = id;
+            document.querySelectorAll('#toolbar span.active').forEach(el => el.classList.remove('active'));
+            document.getElementById(`lbl-q${id}`).classList.add('active');
+            updateSphere(id);
+        }
+
         const container = document.getElementById('canvas-container');
         const scene = new THREE.Scene();
-        
-        // Garantindo tamanhos corretos
-        const width = container.clientWidth || window.innerWidth * 0.6;
-        const height = container.clientHeight || 500;
-        
-        const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
-        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
-        renderer.setSize(width, height);
-        renderer.setClearColor(0x0b0f19, 1);
+        const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 1000); 
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
         container.appendChild(renderer.domElement);
 
         const controls = new THREE.OrbitControls(camera, renderer.domElement);
-        controls.enableDamping = true;
-        controls.dampingFactor = 0.05;
+        controls.enableDamping = true; controls.dampingFactor = 0.05;
 
-        // Grupo da Esfera
-        const sphereGroup = new THREE.Group();
-        scene.add(sphereGroup);
+        const sphereGroup = new THREE.Group(); scene.add(sphereGroup);
+        sphereGroup.add(new THREE.Mesh(new THREE.SphereGeometry(2, 30, 15), new THREE.MeshBasicMaterial({ color: 0x3b82f6, wireframe: true, transparent: true, opacity: 0.25 })));
+        
+        const equator = new THREE.Mesh(new THREE.RingGeometry(1.98, 2.02, 64), new THREE.MeshBasicMaterial({ color: 0x00ffcc, side: THREE.DoubleSide, transparent: true, opacity: 0.4 }));
+        equator.rotation.x = Math.PI / 2; sphereGroup.add(equator);
+        sphereGroup.add(new THREE.AxesHelper(2.3));
 
-        // Grid da Esfera (Material Básico para garantir renderização sem luz)
-        const sphereGeo = new THREE.SphereGeometry(2, 30, 15);
-        const sphereMat = new THREE.MeshBasicMaterial({ 
-            color: 0x3b82f6, 
-            wireframe: true, 
-            transparent: true, 
-            opacity: 0.25 
-        });
-        const sphere = new THREE.Mesh(sphereGeo, sphereMat);
-        sphereGroup.add(sphere);
-
-        // Anel Equador
-        const ringGeo = new THREE.RingGeometry(1.98, 2.02, 64);
-        const ringMat = new THREE.MeshBasicMaterial({ color: 0x00ffcc, side: THREE.DoubleSide, transparent: true, opacity: 0.4 });
-        const equator = new THREE.Mesh(ringGeo, ringMat);
-        equator.rotation.x = Math.PI / 2;
-        sphereGroup.add(equator);
-
-        // Eixos Cartesianos internos de referência
-        const axesHelper = new THREE.AxesHelper(2.3);
-        sphereGroup.add(axesHelper);
-
-        // Vetor (Seta de Estado)
-        const arrowHelper = new THREE.ArrowHelper(
-            new THREE.Vector3(0, 1, 0), 
-            new THREE.Vector3(0, 0, 0), 
-            2, 
-            0x00ffcc, 
-            0.4, 
-            0.15
-        );
+        const arrowHelper = new THREE.ArrowHelper(new THREE.Vector3(0, 1, 0), new THREE.Vector3(0, 0, 0), 2, 0x00ffcc, 0.4, 0.15);
         sphereGroup.add(arrowHelper);
+        
+        camera.position.set(4, 4, 6.5);
 
-        camera.position.set(3, 3, 5.5);
+        ['theta', 'phi'].forEach(id => {
+            document.getElementById(id).addEventListener('input', () => {
+                lastUpdateType = 'manual';
+                let th = parseFloat(document.getElementById('theta').value);
+                let ph = parseFloat(document.getElementById('phi').value);
+                lastManualData = {th, ph};
 
-        // Lógica de Atualização Física/Estética
-        function updateStateVisuals() {
-            const q = qubitsState[activeQubit];
+                let q = qubitsState[activeQubit];
+                q.ent = false;
+                q.a = { r: Math.cos(th/2), i: 0 };
+                q.b = { r: Math.sin(th/2) * Math.cos(ph), i: Math.sin(th/2) * Math.sin(ph) };
+                
+                document.getElementById('math-display').innerHTML = `$$ \\text{${dict[currentLang].mMan} (q}_{${activeQubit}}): \\theta=${th.toFixed(2)}, \\varphi=${ph.toFixed(2)} $$`;
+                renderMathSafe();
+                updateSphere(activeQubit);
+            });
+        });
+
+        function addGate(type, q1, q2 = null) {
+            lastUpdateType = 'circuit';
+            setActiveQubit(q1);
+            let step = { type, q: q1 };
+            if (type === 'CNOT') { step.c = q1; step.t = q2; setActiveQubit(q2); }
+            if (type === 'M') {
+                const p0 = C.mag(qubitsState[q1].a) ** 2;
+                step.val = (Math.random() < p0) ? 0 : 1; 
+            }
+            circuitHistory.push(step);
+            processHistory();
             
-            // Atualizar Sliders
-            document.getElementById('theta').value = q.theta;
-            document.getElementById('phi').value = q.phi;
+            const timeline = document.getElementById('timeline-container');
+            timeline.scrollLeft = timeline.scrollWidth;
+        }
 
-            // Converter para Cartesianas (Y é altura no ThreeJS)
-            const x = Math.sin(q.theta) * Math.cos(q.phi);
-            const z = Math.sin(q.theta) * Math.sin(q.phi);
-            const y = Math.cos(q.theta);
+        function resetCircuit() {
+            lastUpdateType = 'none';
+            circuitHistory = [];
+            processHistory();
+            document.getElementById('math-display').innerHTML = `$$ \\text{${dict[currentLang].math}} $$`;
+            renderMathSafe();
+        }
+
+        function processHistory() {
+            initStates();
+            let lastMath = "";
+
+            circuitHistory.forEach((gate) => {
+                let q;
+                if (gate.type === 'H') {
+                    q = qubitsState[gate.q]; if(q.ent) return;
+                    let na = C.mulReal(C.add(q.a, q.b), 1/Math.sqrt(2));
+                    let nb = C.mulReal(C.sub(q.a, q.b), 1/Math.sqrt(2));
+                    q.a = na; q.b = nb;
+                    lastMath = `H|\\psi_{q${gate.q}}\\rangle = \\frac{1}{\\sqrt{2}}\\begin{bmatrix}1 & 1 \\\\ 1 & -1\\end{bmatrix} \\begin{bmatrix}\\alpha \\\\ \\beta\\end{bmatrix}`;
+                } 
+                else if (gate.type === 'X') {
+                    q = qubitsState[gate.q]; if(q.ent) return;
+                    let temp = q.a; q.a = q.b; q.b = temp;
+                    lastMath = `X|\\psi_{q${gate.q}}\\rangle = \\begin{bmatrix}0 & 1 \\\\ 1 & 0\\end{bmatrix} \\begin{bmatrix}\\alpha \\\\ \\beta\\end{bmatrix}`;
+                }
+                else if (gate.type === 'CNOT') {
+                    let ctrl = qubitsState[gate.c], tgt = qubitsState[gate.t];
+                    let p1 = C.mag(ctrl.b) ** 2;
+                    if(p1 > 0.99) { let t = tgt.a; tgt.a = tgt.b; tgt.b = t; }
+                    else if (p1 > 0.01) { ctrl.ent = true; tgt.ent = true; }
+                    lastMath = `\\text{CNOT: } q_{${gate.c}} \\to q_{${gate.t}}`;
+                }
+                else if (gate.type === 'M') {
+                    q = qubitsState[gate.q]; q.ent = false;
+                    if (gate.val === 0) { q.a = {r: 1, i: 0}; q.b = {r: 0, i: 0}; }
+                    else { q.a = {r: 0, i: 0}; q.b = {r: 1, i: 0}; }
+                    lastMath = `\\text{${dict[currentLang].mMeas}: } q_{${gate.q}} \\to |${gate.val}\\rangle`;
+                }
+            });
+
+            renderTimeline();
+            updateSphere(activeQubit); 
+            
+            if(lastUpdateType === 'circuit' && lastMath !== "") {
+                document.getElementById('math-display').innerHTML = `$$ ${lastMath} $$`;
+                renderMathSafe();
+            }
+        }
+
+        function renderTimeline() {
+            const grid = document.getElementById('circuit-grid');
+            grid.innerHTML = '';
+            
+            circuitHistory.forEach((gate, stepIdx) => {
+                let html = '';
+                if (gate.type === 'H' || gate.type === 'X') {
+                    html += `<div class="gate-box ${gate.type==='X'?'gate-x':''}" style="grid-column: ${stepIdx+1}; grid-row: ${gate.q+1}" onclick="setActiveQubit(${gate.q})">${gate.type}</div>`;
+                }
+                else if (gate.type === 'CNOT') {
+                    let top = Math.min(gate.c, gate.t) + 1;
+                    let bottom = Math.max(gate.c, gate.t) + 1;
+                    html += `<div class="cnot-v-line" style="grid-column: ${stepIdx+1}; grid-row: ${top}; top: 20px; height: ${(bottom-top)*40}px;"></div>`;
+                    html += `<div class="cnot-dot" style="grid-column: ${stepIdx+1}; grid-row: ${gate.c+1}"></div>`;
+                    html += `<div class="cnot-target" style="grid-column: ${stepIdx+1}; grid-row: ${gate.t+1}" onclick="setActiveQubit(${gate.t})"></div>`;
+                }
+                else if (gate.type === 'M') {
+                    let row = gate.q + 1;
+                    html += `<div class="gate-box gate-m" style="grid-column: ${stepIdx+1}; grid-row: ${row}" onclick="setActiveQubit(${gate.q})">M</div>`;
+                    html += `<div class="measure-v-line" style="grid-column: ${stepIdx+1}; grid-row: ${row}; top: 35px; height: ${((4-row)*40)-20}px;"></div>`;
+                    html += `<div class="c-bit-text" style="grid-column: ${stepIdx+1}; grid-row: 5;">${gate.val}</div>`;
+                }
+                grid.innerHTML += html;
+            });
+        }
+
+        function updateSphere(id) {
+            const q = qubitsState[id];
+            if(q.ent) {
+                arrowHelper.setLength(0.01);
+                document.getElementById('state-vector').innerHTML = `\\( |\\psi_{q${id}}\\rangle \\) <span style="color:#ef4444;"> = ${dict[currentLang].mEnt} (r=0)</span>`;
+                return;
+            }
+
+            let m_a = Math.max(0, Math.min(1, C.mag(q.a)));
+            let phase = C.arg(q.b) - C.arg(q.a); if(phase < 0) phase += 2 * Math.PI;
+            let theta = 2 * Math.acos(m_a);
+
+            document.getElementById('theta').value = theta;
+            document.getElementById('phi').value = phase;
+
+            const x = Math.sin(theta) * Math.cos(phase);
+            const z = Math.sin(theta) * Math.sin(phase);
+            const y = Math.cos(theta);
             
             arrowHelper.setDirection(new THREE.Vector3(x, y, z));
+            arrowHelper.setLength(2);
 
-            // Vetor ket formatado
-            const amp0 = Math.cos(q.theta / 2).toFixed(2);
-            const amp1 = Math.sin(q.theta / 2).toFixed(2);
-            document.getElementById('state-vector').innerHTML = `|ψ⟩ = ${amp0}|0⟩ + e^(i·${q.phi.toFixed(2)})${amp1}|1⟩`;
-
-            // Textos explicativos didáticos baseados no estado
-            let explanation = translations[currentLang][q.status] || translations[currentLang].superposition;
-            document.getElementById('lbl-explanation').innerText = explanation;
-        }
-
-        // Funções das Portas Lógicas do Simulador
-        function applyHadamard(id) {
-            let q = qubitsState[id];
-            if (q.theta === 0) {
-                q.theta = Math.PI / 2;
-                q.phi = 0;
-            } else if (Math.abs(q.theta - Math.PI) < 0.1) {
-                q.theta = Math.PI / 2;
-                q.phi = Math.PI;
-            } else {
-                q.theta = 0;
-                q.phi = 0;
-            }
-            q.status = 'superposition';
-            updateStateVisuals();
-            syncCircuitLabels();
-        }
-
-        function applyX(id) {
-            let q = qubitsState[id];
-            q.theta = Math.PI - q.theta;
-            q.status = q.theta > 1.5 ? 'pure1' : 'pure0';
-            updateStateVisuals();
-            syncCircuitLabels();
-        }
-
-        function applyCNOT(control, target) {
-            let ctrlQ = qubitsState[control];
-            let tgtQ = qubitsState[target];
-            if (ctrlQ.theta > 0.5) { 
-                tgtQ.theta = Math.PI - tgtQ.theta;
-                tgtQ.status = 'entangled';
-            }
-            updateStateVisuals();
-            syncCircuitLabels();
-        }
-
-        function applyMeasure(id) {
-            let q = qubitsState[id];
-            const p0 = Math.pow(Math.cos(q.theta / 2), 2);
-            const r = Math.random();
+            const amp0 = C.mag(q.a).toFixed(2);
+            const amp1 = C.mag(q.b).toFixed(2);
+            let mathString = `|\\psi_{q${id}}\\rangle = ${amp0}|0\\rangle ` + (amp1 > 0 ? `+ e^{i ${phase.toFixed(2)}} ${amp1}|1\\rangle` : '');
             
-            if (r < p0) {
-                q.theta = 0;
-                q.phi = 0;
-                q.status = 'pure0';
-            } else {
-                q.theta = Math.PI;
-                q.phi = 0;
-                q.status = 'pure1';
-            }
-            updateStateVisuals();
-            syncCircuitLabels();
+            document.getElementById('state-vector').innerHTML = `\\( ${mathString} \\)`;
+            renderMathSafe();
         }
 
-        // Reinicialização de um único qubit
-        function resetSingle(id) {
-            qubitsState[id] = { theta: 0, phi: 0, status: 'pure0' };
-            if (id === activeQubit) {
-                updateStateVisuals();
-            }
-            syncCircuitLabels();
-        }
-
-        // Reinicialização de todos
-        function resetAll() {
-            qubitsState = [
-                { theta: 0, phi: 0, status: 'pure0' },
-                { theta: 0, phi: 0, status: 'pure0' },
-                { theta: 0, phi: 0, status: 'pure0' }
-            ];
-            updateStateVisuals();
-            syncCircuitLabels();
-        }
-
-        function selectQubit(id) {
-            activeQubit = id;
-            document.querySelectorAll('.qubit-label').forEach((el, idx) => {
-                if(idx === id) el.classList.add('active');
-                else el.classList.remove('active');
-            });
-            updateStateVisuals();
-        }
-
-        function syncCircuitLabels() {
-            for(let i=0; i<3; i++) {
-                const q = qubitsState[i];
-                let val = "|ψ⟩";
-                if (q.theta === 0) val = "|0⟩";
-                if (Math.abs(q.theta - Math.PI) < 0.1) val = "|1⟩";
-                document.getElementById(`q${i}-lbl`).innerText = `q[${i}]: ${val}`;
-            }
-        }
-
-        // Sincronização dos Sliders Manuais
-        document.getElementById('theta').addEventListener('input', (e) => {
-            qubitsState[activeQubit].theta = parseFloat(e.target.value);
-            qubitsState[activeQubit].status = 'superposition';
-            updateStateVisuals();
-        });
-        document.getElementById('phi').addEventListener('input', (e) => {
-            qubitsState[activeQubit].phi = parseFloat(e.target.value);
-            qubitsState[activeQubit].status = 'superposition';
-            updateStateVisuals();
-        });
-
-        // Rotação Automática Lenta (Sem bloquear o controle do mouse)
         function animate() {
             requestAnimationFrame(animate);
-            
-            // Faz a esfera rotacionar lentamente de forma contínua
             sphereGroup.rotation.y += 0.003;
-
-            controls.update();
-            renderer.render(scene, camera);
+            controls.update(); renderer.render(scene, camera);
         }
 
-        // Garante redimensionamento correto
         function handleResize() {
-            const w = container.clientWidth;
-            const h = container.clientHeight;
-            camera.aspect = w / h;
-            camera.updateProjectionMatrix();
-            renderer.setSize(w, h);
+            const container = document.getElementById('canvas-container');
+            const size = container.clientHeight; 
+            
+            container.style.width = size + 'px'; 
+            
+            camera.aspect = 1; 
+            camera.updateProjectionMatrix(); 
+            renderer.setSize(size, size);
         }
-
-        // Inicialização
-        setLanguage('pt');
-        animate();
 
         window.addEventListener('resize', handleResize);
-        // Pequeno atraso para capturar as dimensões reais após o render da página
-        setTimeout(handleResize, 100);
+        setTimeout(handleResize, 150); 
+        
+        // --- AQUI ESTÁ A MÁGICA INICIAL QUE RESOLVE O PROBLEMA DO TEXTO CRU ---
+        // Assim que a página abrir, ele formata as fórmulas automaticamente,
+        // igual quando você clica em Reset
+        setLang('pt');
+        
+        animate();
     </script>
 </body>
 </html>
