@@ -1,13 +1,13 @@
 <!DOCTYPE html>
 <html lang="pt">
-<head>    
-        <!-- Google tag (gtag.js) -->
+<head>
+    <!-- Google tag (gtag.js) -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-QN1V0MKKQ6"></script>
     <script>
       window.dataLayer = window.dataLayer || [];
       function gtag(){dataLayer.push(arguments);}
       gtag('js', new Date());
-    
+
       gtag('config', 'G-QN1V0MKKQ6');
     </script>
 
@@ -19,14 +19,18 @@
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     
-    <!-- MathJax -->
+    <!-- MathJax com Trava de Segurança -->
     <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
     <script>
+        window.isMathJaxReady = false;
         window.MathJax = {
+            tex: { inlineMath: [['\\(', '\\)']], displayMath: [['$$', '$$']] },
             startup: {
                 pageReady: () => {
                     return MathJax.startup.defaultPageReady().then(() => {
-                        console.log('MathJax inicializado.');
+                        window.isMathJaxReady = true;
+                        // Força renderização pendente assim que carregar
+                        if (window.renderMathSafe) window.renderMathSafe();
                     });
                 }
             }
@@ -142,6 +146,46 @@
         .measure-v-line { position: absolute; width: 3px; border-left: 1px solid var(--measure-color); border-right: 1px solid var(--measure-color); z-index: 1; left: 50%; transform: translateX(-50%); }
         .c-bit-text { font-family: monospace; font-size: 0.7rem; color: #cbd5e1; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); }
 
+        /* Estilos do Botão e Modal de Feedback */
+        #btn-feedback { 
+            position: fixed; bottom: 20px; right: 20px; z-index: 99; 
+            background: var(--accent); color: var(--bg); border: none; 
+            padding: 10px 20px; border-radius: 50px; font-weight: bold; 
+            cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.4); 
+            transition: all 0.2s;
+        }
+        #btn-feedback:hover { background: #fff; transform: translateY(-2px); }
+
+        #feedback-modal { 
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: rgba(0,0,0,0.7); z-index: 100; justify-content: center; align-items: center; 
+            backdrop-filter: blur(5px);
+        }
+        .modal-content { 
+            background: var(--panel); padding: 25px; border-radius: 10px; 
+            width: 90%; max-width: 400px; border: 1px solid var(--accent); position: relative; 
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+        }
+        .close-btn { 
+            position: absolute; top: 10px; right: 15px; font-size: 1.5rem; 
+            color: var(--text); cursor: pointer; background: none; border: none; 
+        }
+        .close-btn:hover { color: var(--accent); }
+        .modal-content input, .modal-content textarea { 
+            width: 100%; margin-top: 10px; padding: 10px; border-radius: 5px; 
+            border: 1px solid #334155; background: #0f172a; color: var(--text); box-sizing: border-box; 
+            font-family: inherit; resize: vertical;
+        }
+        .modal-content input:focus, .modal-content textarea:focus {
+            outline: none; border-color: var(--accent);
+        }
+        .modal-content button[type="submit"] { 
+            margin-top: 15px; width: 100%; background: var(--cnot-color); color: white; 
+            border: none; padding: 10px; border-radius: 5px; cursor: pointer; font-weight: bold; 
+            transition: background 0.2s;
+        }
+        .modal-content button[type="submit"]:hover { background: #059669; }
+
         @media (max-width: 800px) {
             body { height: auto; overflow: auto; }
             #top-half { flex-direction: column; }
@@ -149,6 +193,7 @@
             #panel-container { width: 100%; border-left: none; flex: none;}
             #bottom-half { flex-direction: column; height: auto; }
             #toolbar { width: 100%; border-right: none; border-bottom: 1px solid rgba(255,255,255,0.1); }
+            #btn-feedback { bottom: 15px; right: 15px; padding: 8px 16px; font-size: 0.9rem; }
         }
     </style>
 </head>
@@ -171,8 +216,7 @@
 
             <h2 id="lbl-title">ESFERA DE BLOCH</h2>
             
-            <!-- Inicialmente limpos para evitar código feio antes do MathJax carregar -->
-            <div id="state-vector">|ψ⟩ = 1.00|0⟩</div>
+            <div id="state-vector">Carregando vetor...</div>
 
             <div id="math-display">
                 Carregando simulador matemático...
@@ -228,6 +272,25 @@
         </div>
     </div>
 
+    <!-- Botão Flutuante Feedback -->
+    <button id="btn-feedback" onclick="document.getElementById('feedback-modal').style.display='flex'">Feedback</button>
+
+    <!-- Janela Modal Feedback (Oculta) -->
+    <div id="feedback-modal">
+        <div class="modal-content">
+            <button class="close-btn" onclick="document.getElementById('feedback-modal').style.display='none'">&times;</button>
+            <h3 style="color: var(--accent); margin-top:0; margin-bottom: 5px;">Envie sua mensagem</h3>
+            <p style="font-size: 0.85rem; color: #cbd5e1; margin-top: 0;">Críticas, sugestões ou correções são bem-vindas!</p>
+            
+            <form action="https://formspree.io/f/xbdngjvr" method="POST">
+                <input type="text" name="Nome" placeholder="Seu Nome" required>
+                <input type="email" name="Email" placeholder="Seu E-mail" required>
+                <textarea name="Mensagem" rows="4" placeholder="Escreva aqui..." required></textarea>
+                <button type="submit">Enviar Mensagem</button>
+            </form>
+        </div>
+    </div>
+
     <script>
         const dict = {
             pt: { title: "ESFERA DE BLOCH", math: "Inicie o circuito ou use os controles.", tools: "Ferramentas", reset: "Reset Circuito", tipTh: "Ângulo entre os pólos.", tipPh: "Fase relativa quântica.", lblTh: "θ (Latitude / Probabilidade)", lblPh: "φ (Longitude / Fase Quântica)", tH: "Hadamard: Cria superposição.", tX: "Pauli-X: Inverte estado.", tM: "Medir: Colapsa em 0 ou 1.", tC: "CNOT: Cria emaranhamento.", mMan: "Manual", mMeas: "Medição", mEnt: "Emaranhado" },
@@ -244,16 +307,16 @@
         let lastUpdateType = 'none';
         let lastManualData = {th: 0, ph: 0};
 
-        function renderMathSafe() {
-            if (typeof MathJax !== 'undefined' && MathJax.typesetPromise) {
-                MathJax.typesetPromise().catch(err => console.log('MathJax deferred', err));
+        // Função global de segurança para carregar a fórmula
+        window.renderMathSafe = function() {
+            if (window.isMathJaxReady && typeof MathJax !== 'undefined' && MathJax.typesetPromise) {
+                MathJax.typesetPromise().catch(err => console.log('MathJax error', err));
             }
-        }
+        };
 
         function setLang(l) {
             currentLang = l;
             document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
-            // Procura o botão correspondente ao idioma e ativa
             document.querySelectorAll('.lang-btn').forEach(b => {
                 if(b.innerText.toLowerCase() === l || (l === 'pt' && b.innerText === 'PT')) b.classList.add('active');
             });
@@ -273,10 +336,10 @@
             
             if (lastUpdateType === 'none') {
                 document.getElementById('math-display').innerHTML = `$$ \\text{${dict[l].math}} $$`;
-                renderMathSafe();
+                window.renderMathSafe();
             } else if (lastUpdateType === 'manual') {
                 document.getElementById('math-display').innerHTML = `$$ \\text{${dict[currentLang].mMan} (q}_{${activeQubit}}): \\theta=${lastManualData.th.toFixed(2)}, \\varphi=${lastManualData.ph.toFixed(2)} $$`;
-                renderMathSafe();
+                window.renderMathSafe();
             } else {
                 processHistory(); 
             }
@@ -338,7 +401,7 @@
                 q.b = { r: Math.sin(th/2) * Math.cos(ph), i: Math.sin(th/2) * Math.sin(ph) };
                 
                 document.getElementById('math-display').innerHTML = `$$ \\text{${dict[currentLang].mMan} (q}_{${activeQubit}}): \\theta=${th.toFixed(2)}, \\varphi=${ph.toFixed(2)} $$`;
-                renderMathSafe();
+                window.renderMathSafe();
                 updateSphere(activeQubit);
             });
         });
@@ -364,7 +427,7 @@
             circuitHistory = [];
             processHistory();
             document.getElementById('math-display').innerHTML = `$$ \\text{${dict[currentLang].math}} $$`;
-            renderMathSafe();
+            window.renderMathSafe();
         }
 
         function processHistory() {
@@ -405,7 +468,7 @@
             
             if(lastUpdateType === 'circuit' && lastMath !== "") {
                 document.getElementById('math-display').innerHTML = `$$ ${lastMath} $$`;
-                renderMathSafe();
+                window.renderMathSafe();
             }
         }
 
@@ -462,7 +525,7 @@
             let mathString = `|\\psi_{q${id}}\\rangle = ${amp0}|0\\rangle ` + (amp1 > 0 ? `+ e^{i ${phase.toFixed(2)}} ${amp1}|1\\rangle` : '');
             
             document.getElementById('state-vector').innerHTML = `\\( ${mathString} \\)`;
-            renderMathSafe();
+            window.renderMathSafe();
         }
 
         function animate() {
@@ -482,14 +545,19 @@
             renderer.setSize(size, size);
         }
 
+        // Fechar janela modal clicando fora dela
+        window.onclick = function(event) {
+            const modal = document.getElementById('feedback-modal');
+            if (event.target === modal) {
+                modal.style.display = "none";
+            }
+        }
+
         window.addEventListener('resize', handleResize);
         setTimeout(handleResize, 150); 
         
-        // --- AQUI ESTÁ A MÁGICA INICIAL QUE RESOLVE O PROBLEMA DO TEXTO CRU ---
-        // Assim que a página abrir, ele formata as fórmulas automaticamente,
-        // igual quando você clica em Reset
+        // Chamada inicial
         setLang('pt');
-        
         animate();
     </script>
 </body>
