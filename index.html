@@ -12,13 +12,13 @@
 
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quantum Lab - Álgebra & Bloch</title>
+    <title>Quantum Lab - Álgebra & Bloch Avançado</title>
     
     <!-- Three.js -->
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     
-    <!-- MathJax Estável -->
+    <!-- MathJax (Configuração Rápida) -->
     <script>
         window.MathJax = {
             tex: { inlineMath: [['\\(', '\\)']], displayMath: [['$$', '$$']] }
@@ -29,108 +29,100 @@
     <style>
         :root {
             --bg-deep: #020617; --accent: #0ea5e9; --cnot-color: #10b981; 
-            --measure-color: #94a3b8; --text: #f8fafc;
+            --measure-color: #94a3b8; --param-color: #f43f5e; --text: #f8fafc;
             --theta-color: #f59e0b; --phi-color: #d946ef;
             --glass-bg: rgba(15, 23, 42, 0.45); --glass-border: rgba(255, 255, 255, 0.1);
         }
         
-        body { margin: 0; color: var(--text); font-family: 'Segoe UI', Tahoma, sans-serif; display: flex; flex-direction: column; height: 100vh; overflow: hidden; background: radial-gradient(circle at 30% 30%, #0f172a 0%, var(--bg-deep) 100%); }
-        ::-webkit-scrollbar { width: 6px; height: 6px; } ::-webkit-scrollbar-track { background: transparent; } ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 10px; } ::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+        /* Fontes Maiores (+1) */
+        body { margin: 0; color: var(--text); font-family: 'Segoe UI', Tahoma, sans-serif; display: flex; flex-direction: column; height: 100vh; overflow: hidden; background: radial-gradient(circle at 30% 30%, #0f172a 0%, var(--bg-deep) 100%); font-size: 1.25rem; }
+        ::-webkit-scrollbar { width: 8px; height: 8px; } ::-webkit-scrollbar-track { background: transparent; } ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 10px; } ::-webkit-scrollbar-thumb:hover { background: var(--accent); }
         
         #top-half { flex: 1; display: flex; flex-direction: row; border-bottom: 1px solid var(--glass-border); overflow: hidden; }
         
-        #canvas-container { height: 100%; aspect-ratio: 1 / 1; max-width: 100%; background: radial-gradient(circle at center, rgba(14, 165, 233, 0.05) 0%, transparent 70%); flex-shrink: 0; position: relative; box-shadow: inset -10px 0 30px rgba(0,0,0,0.5); }
+        /* Painel direito 50% maior (570px) */
+        #canvas-container { flex: 1; background: radial-gradient(circle at center, rgba(14, 165, 233, 0.05) 0%, transparent 70%); position: relative; box-shadow: inset -10px 0 30px rgba(0,0,0,0.5); }
+        #panel-container { width: 570px; flex-shrink: 0; padding: 25px 30px; box-sizing: border-box; overflow-y: auto; background: var(--glass-bg); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border-left: 1px solid var(--glass-border); box-shadow: -10px 0 30px rgba(0,0,0,0.3); }
         
-        #panel-container { flex: 1; padding: 25px 40px; box-sizing: border-box; overflow-y: auto; background: var(--glass-bg); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border-left: 1px solid var(--glass-border); box-shadow: -10px 0 30px rgba(0,0,0,0.3); }
+        h2 { margin: 0; font-size: 1.8rem; color: var(--accent); letter-spacing: 1px; text-shadow: 0 0 10px rgba(14, 165, 233, 0.5);}
+        h3 { font-size: 1.3rem; }
         
-        h2 { margin: 0; font-size: 1.4rem; color: var(--accent); letter-spacing: 1px; text-shadow: 0 0 10px rgba(14, 165, 233, 0.5);}
-        
-        #state-vector { font-family: monospace; font-size: 1.2rem; background: rgba(0,0,0,0.3); padding: 12px; border-left: 4px solid var(--accent); margin: 15px 0; border-radius: 0 6px 6px 0; display: flex; align-items: center;}
-        
-        #math-display { background: rgba(0,0,0,0.3); padding: 15px; border-radius: 12px; font-size: 0.95rem; min-height: 70px; overflow-x: auto; margin-bottom: 20px; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(255,255,255,0.05); box-shadow: inset 0 2px 10px rgba(0,0,0,0.5);}
+        #state-vector { font-family: monospace; font-size: 1.4rem; background: rgba(0,0,0,0.3); padding: 12px; border-left: 4px solid var(--accent); margin: 15px 0; border-radius: 0 6px 6px 0; display: flex; align-items: center;}
+        #math-display { background: rgba(0,0,0,0.3); padding: 15px; border-radius: 12px; font-size: 1.1rem; min-height: 80px; overflow-x: auto; margin-bottom: 20px; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(255,255,255,0.05); box-shadow: inset 0 2px 10px rgba(0,0,0,0.5);}
 
-        .lang-selector { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
-        .lang-btn { background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); color: var(--text); padding: 5px 12px; border-radius: 20px; cursor: pointer; font-size: 0.75rem; font-weight: bold; transition: all 0.3s ease; }
+        .header-controls { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;}
+        .lang-selector { display: flex; flex-wrap: wrap; gap: 8px; }
+        .lang-btn { background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); color: var(--text); padding: 6px 14px; border-radius: 20px; cursor: pointer; font-size: 0.9rem; font-weight: bold; transition: all 0.3s ease; }
         .lang-btn:hover { background: rgba(255,255,255,0.1); transform: translateY(-1px); }
         .lang-btn.active { background: var(--accent); color: var(--bg-deep); border-color: var(--accent); box-shadow: 0 0 10px rgba(14, 165, 233, 0.4);}
 
+        /* Botão de Rotação 3D */
+        #btn-rotate { background: linear-gradient(135deg, #8b5cf6, #6d28d9); color: white; border: none; box-shadow: 0 4px 10px rgba(139,92,246,0.3); padding: 6px 16px; border-radius: 20px; cursor: pointer; font-size: 0.9rem; font-weight: bold; transition: all 0.2s;}
+        #btn-rotate:hover { transform: translateY(-2px); box-shadow: 0 6px 15px rgba(139,92,246,0.5); }
+        #btn-rotate.paused { background: linear-gradient(135deg, #64748b, #475569); box-shadow: none; border: 1px solid var(--glass-border);}
+
         .template-selector { margin-bottom: 15px; background: rgba(0,0,0,0.2); padding: 12px; border-radius: 8px; border: 1px solid var(--glass-border); }
-        .template-selector label { display: block; font-size: 0.85rem; color: var(--accent); margin-bottom: 8px; font-weight: bold; }
-        .template-selector select { width: 100%; padding: 8px; border-radius: 6px; background: #0f172a; color: var(--text); border: 1px solid #334155; font-family: inherit; cursor: pointer; outline: none; transition: 0.2s;}
-        .template-selector select:focus { border-color: var(--accent); box-shadow: 0 0 5px rgba(14,165,233,0.5); }
-
-        .manual-controls { display: flex; flex-direction: column; gap: 10px; margin-top: 15px; max-width: 600px;}
-        .slider-header { display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem; font-weight: bold;}
+        .template-selector label { display: block; font-size: 1rem; color: var(--accent); margin-bottom: 8px; font-weight: bold; }
+        .template-selector select { width: 100%; padding: 10px; border-radius: 6px; background: #0f172a; color: var(--text); border: 1px solid #334155; font-family: inherit; cursor: pointer; outline: none; transition: 0.2s; font-size: 1.1rem; }
         
-        /* Caixas de Texto (Inputs Numéricos) */
-        .input-group { display: flex; align-items: center; gap: 6px; background: rgba(0,0,0,0.4); padding: 4px 10px; border-radius: 6px; border: 1px solid var(--glass-border); transition: 0.2s; }
-        .input-group:focus-within { border-color: var(--accent); box-shadow: 0 0 8px rgba(14,165,233,0.4); }
-        .input-group input { background: transparent; border: none; color: white; font-family: monospace; font-size: 1rem; width: 45px; outline: none; text-align: right; }
+        .manual-controls { display: flex; flex-direction: column; gap: 10px; margin-top: 15px;}
+        .slider-header { display: flex; justify-content: space-between; align-items: center; font-size: 1.1rem; font-weight: bold;}
+        .input-group { display: flex; align-items: center; gap: 6px; background: rgba(0,0,0,0.4); padding: 6px 12px; border-radius: 6px; border: 1px solid var(--glass-border); transition: 0.2s; }
+        .input-group input { background: transparent; border: none; color: white; font-family: monospace; font-size: 1.2rem; width: 60px; outline: none; text-align: right; }
         .input-group input::-webkit-outer-spin-button, .input-group input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-        .input-group span { font-family: monospace; font-size: 0.9rem; font-weight: bold; }
-
-        input[type=range] { -webkit-appearance: none; width: 100%; background: transparent; padding: 5px 0 15px 0;}
-        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 22px; width: 22px; border-radius: 50%; cursor: pointer; margin-top: -7px; border: 2px solid #fff; box-shadow: 0 0 10px rgba(0,0,0,0.5);}
-        input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 8px; cursor: pointer; background: rgba(255,255,255,0.15); border-radius: 4px; }
         
+        input[type=range] { -webkit-appearance: none; width: 100%; background: transparent; padding: 5px 0 15px 0;}
+        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 26px; width: 26px; border-radius: 50%; cursor: pointer; margin-top: -9px; border: 2px solid #fff; box-shadow: 0 0 10px rgba(0,0,0,0.5);}
+        input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 8px; cursor: pointer; background: rgba(255,255,255,0.15); border-radius: 4px; }
         #theta::-webkit-slider-thumb { background: var(--theta-color); box-shadow: 0 0 12px var(--theta-color); }
         #phi::-webkit-slider-thumb { background: var(--phi-color); box-shadow: 0 0 12px var(--phi-color); }
 
-        .tooltip { position: relative; cursor: help; border-bottom: 1px dotted var(--accent); }
-        .tooltip:hover::after { content: attr(data-tip); position: absolute; bottom: 120%; left: 50%; transform: translateX(-50%); background: rgba(15,23,42,0.9); backdrop-filter: blur(8px); border: 1px solid var(--accent); color: #fff; padding: 10px; border-radius: 8px; font-size: 0.8rem; width: 220px; z-index: 100; text-align: center; box-shadow: 0 10px 20px rgba(0,0,0,0.5); font-family: sans-serif; font-weight: normal; }
+        .action-buttons { display: flex; gap: 15px; margin-top: 15px; width: 100%; }
+        .btn-undo { background: linear-gradient(135deg, #f59e0b, #d97706); color: white; border: none; padding: 12px; border-radius: 8px; cursor: pointer; font-weight: bold; flex: 1; box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3); transition: 0.2s; font-size: 1.1rem; }
+        .btn-reset { background: linear-gradient(135deg, #ef4444, #b91c1c); color: white; border: none; padding: 12px; border-radius: 8px; cursor: pointer; font-weight: bold; flex: 1; box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3); transition: 0.2s; font-size: 1.1rem; }
 
-        .action-buttons { display: flex; gap: 10px; margin-top: 15px; width: 100%; }
-        .btn-undo { background: linear-gradient(135deg, #f59e0b, #d97706); color: white; border: none; padding: 10px; border-radius: 8px; cursor: pointer; font-weight: bold; flex: 1; box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3); transition: 0.2s; }
-        .btn-undo:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(245, 158, 11, 0.5); }
-        .btn-reset { background: linear-gradient(135deg, #ef4444, #b91c1c); color: white; border: none; padding: 10px; border-radius: 8px; cursor: pointer; font-weight: bold; flex: 1; box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3); transition: 0.2s; }
-        .btn-reset:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(239, 68, 68, 0.5); }
-
-        #bottom-half { height: 220px; flex-shrink: 0; display: flex; flex-direction: row; background: rgba(2, 6, 23, 0.6); backdrop-filter: blur(10px); box-sizing: border-box; }
-        #toolbar { width: 240px; flex-shrink: 0; display: flex; flex-direction: column; gap: 12px; padding: 15px 20px; border-right: 1px solid var(--glass-border); background: rgba(255,255,255,0.02); }
-        .toolbar-row { display: flex; gap: 8px; align-items: center; }
-        .toolbar-row span { font-family: monospace; font-weight: bold; width: 30px; cursor: pointer; padding: 4px; border-radius: 6px; text-align: center; transition: 0.3s;}
-        .toolbar-row span:hover { background: rgba(255,255,255,0.05); }
+        #bottom-half { height: 240px; flex-shrink: 0; display: flex; flex-direction: row; background: rgba(2, 6, 23, 0.6); backdrop-filter: blur(10px); box-sizing: border-box; }
+        #toolbar { width: 380px; flex-shrink: 0; display: flex; flex-direction: column; gap: 14px; padding: 15px 20px; border-right: 1px solid var(--glass-border); background: rgba(255,255,255,0.02); overflow-y: auto;}
+        .toolbar-row { display: flex; gap: 6px; align-items: center; }
+        .toolbar-row span { font-family: monospace; font-weight: bold; width: 35px; cursor: pointer; padding: 4px; border-radius: 6px; text-align: center; transition: 0.3s; font-size: 1.1rem;}
         .toolbar-row span.active { color: var(--accent); background: rgba(14, 165, 233, 0.15); box-shadow: inset 0 0 5px rgba(14,165,233,0.3); }
         
-        .btn-gate { background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.0)); border: 1px solid var(--glass-border); color: var(--text); cursor: grab; padding: 6px; border-radius: 8px; font-family: monospace; font-size: 0.85rem; width: 42px; display: flex; align-items: center; justify-content: center; gap: 4px; backdrop-filter: blur(4px); transition: all 0.2s ease; }
-        .btn-gate:active { cursor: grabbing; } .btn-gate svg { width: 14px; height: 14px; opacity: 0.7; pointer-events: none; } .btn-gate:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
-        .btn-gate.g-h:hover { border-color: var(--accent); color: var(--accent); box-shadow: 0 5px 15px rgba(14,165,233,0.2);} .btn-gate.g-x:hover { border-color: var(--cnot-color); color: var(--cnot-color); box-shadow: 0 5px 15px rgba(16,185,129,0.2);} .btn-gate.g-m:hover { border-color: var(--measure-color); color: var(--measure-color); }
+        .btn-gate { background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.0)); border: 1px solid var(--glass-border); color: var(--text); cursor: grab; padding: 8px 6px; border-radius: 8px; font-family: monospace; font-size: 1.1rem; width: 46px; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(4px); transition: all 0.2s ease; }
+        .btn-gate:active { cursor: grabbing; } .btn-gate svg { width: 16px; height: 16px; opacity: 0.7; pointer-events: none; } 
         
         #timeline-container { flex: 1; padding: 20px 20px; display: flex; position: relative; overflow-x: auto; overflow-y: hidden; transition: background 0.3s; }
         #timeline-container.drag-over-active { background: rgba(14, 165, 233, 0.08); box-shadow: inset 0 0 30px rgba(14, 165, 233, 0.2); }
         
-        .timeline-grid { display: grid; grid-template-rows: 40px 40px 40px 20px 20px; grid-auto-columns: 50px; grid-auto-flow: column; position: relative; align-items: center; width: 100%; min-width: 600px;}
+        .timeline-grid { display: grid; grid-template-rows: 45px 45px 45px 25px 25px; grid-auto-columns: 55px; grid-auto-flow: column; position: relative; align-items: center; width: 100%; min-width: 600px;}
         .wire-q { position: absolute; width: 100%; height: 2px; background: linear-gradient(90deg, transparent, rgba(148, 163, 184, 0.4) 10%, rgba(148, 163, 184, 0.4) 90%, transparent); z-index: 1; }
-        .wire-q.w0 { top: 40px; } .wire-q.w1 { top: 80px; } .wire-q.w2 { top: 120px; } 
-        .wire-c { position: absolute; width: 100%; height: 4px; border-top: 1px solid rgba(148, 163, 184, 0.5); border-bottom: 1px solid rgba(148, 163, 184, 0.5); top: 170px; z-index: 1; }
+        .wire-q.w0 { top: 45px; } .wire-q.w1 { top: 90px; } .wire-q.w2 { top: 135px; } 
+        .wire-c { position: absolute; width: 100%; height: 4px; border-top: 1px solid rgba(148, 163, 184, 0.5); border-bottom: 1px solid rgba(148, 163, 184, 0.5); top: 190px; z-index: 1; }
 
-        .gate-box { width: 34px; height: 34px; border-radius: 8px; background: linear-gradient(135deg, rgba(14,165,233,0.3), rgba(14,165,233,0.1)); border: 1px solid var(--accent); color: white; display: flex; justify-content: center; align-items: center; font-family: monospace; font-weight: bold; z-index: 2; position: relative; cursor: grab; backdrop-filter: blur(4px); box-shadow: 0 4px 10px rgba(0,0,0,0.3); justify-self: center; align-self: center; }
-        .gate-box:active { cursor: grabbing; transform: scale(1.1); z-index: 10;}
+        .gate-box { width: 40px; height: 40px; border-radius: 8px; background: linear-gradient(135deg, rgba(14,165,233,0.3), rgba(14,165,233,0.1)); border: 1px solid var(--accent); color: white; display: flex; justify-content: center; align-items: center; font-family: monospace; font-weight: bold; z-index: 2; position: relative; cursor: grab; backdrop-filter: blur(4px); box-shadow: 0 4px 10px rgba(0,0,0,0.3); justify-self: center; align-self: center; font-size: 1rem;}
         .gate-x { background: linear-gradient(135deg, rgba(16,185,129,0.3), rgba(16,185,129,0.1)); border-color: var(--cnot-color); }
-        .gate-m { background: linear-gradient(135deg, rgba(100,116,139,0.6), rgba(100,116,139,0.2)); border-color: var(--measure-color); font-size: 0.8rem;}
+        .gate-r { background: linear-gradient(135deg, rgba(244,63,94,0.3), rgba(244,63,94,0.1)); border-color: var(--param-color); font-size: 0.75rem;}
+        .gate-m { background: linear-gradient(135deg, rgba(100,116,139,0.6), rgba(100,116,139,0.2)); border-color: var(--measure-color); font-size: 1rem;}
         
-        .cnot-dot { width: 14px; height: 14px; border-radius: 50%; background: var(--cnot-color); z-index: 2; justify-self: center; align-self: center; box-shadow: 0 0 10px var(--cnot-color);}
-        .cnot-target { width: 28px; height: 28px; border-radius: 50%; border: 2px solid var(--cnot-color); z-index: 2; justify-self: center; align-self: center; display: flex; justify-content: center; align-items: center; color: var(--cnot-color); font-size: 1.4rem; background: rgba(16,185,129,0.1); backdrop-filter: blur(2px);}
+        .cnot-dot { width: 16px; height: 16px; border-radius: 50%; background: var(--cnot-color); z-index: 2; justify-self: center; align-self: center; box-shadow: 0 0 10px var(--cnot-color);}
+        .cnot-target { width: 32px; height: 32px; border-radius: 50%; border: 2px solid var(--cnot-color); z-index: 2; justify-self: center; align-self: center; display: flex; justify-content: center; align-items: center; color: var(--cnot-color); font-size: 1.6rem; background: rgba(16,185,129,0.1); backdrop-filter: blur(2px);}
         .cnot-target::after { content: "+"; position: absolute; margin-top:-2px;}
         .cnot-v-line { position: absolute; width: 2px; background: var(--cnot-color); z-index: 1; justify-self: center; box-shadow: 0 0 5px var(--cnot-color);}
         
-        /* Textos Grandes para a Medição 1 ou 0 */
         .measure-v-line { position: absolute; width: 4px; border-left: 1px solid var(--measure-color); border-right: 1px solid var(--measure-color); z-index: 1; justify-self: center; }
-        .c-bit-text { font-family: monospace; font-size: 1.2rem; font-weight: bold; color: #fff; position: absolute; bottom: -5px; justify-self: center; background: #0f172a; padding: 4px 12px; border-radius: 6px; border: 2px solid var(--measure-color); box-shadow: 0 0 12px rgba(148,163,184,0.6); z-index: 3;}
+        .c-bit-text { font-family: monospace; font-size: 1.4rem; font-weight: bold; color: #fff; position: absolute; bottom: -10px; justify-self: center; background: #0f172a; padding: 4px 12px; border-radius: 6px; border: 2px solid var(--measure-color); box-shadow: 0 0 12px rgba(148,163,184,0.6); z-index: 3;}
 
-        /* Modal de Feedback Restaurado e Elegante */
-        #btn-feedback { position: fixed; bottom: 20px; right: 20px; z-index: 99; background: var(--accent); color: var(--bg-deep); border: none; padding: 10px 20px; border-radius: 50px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 15px rgba(14,165,233,0.4); transition: all 0.2s; }
+        /* Modal Feedback */
+        #btn-feedback { position: fixed; bottom: 20px; right: 20px; z-index: 99; background: var(--accent); color: var(--bg-deep); border: none; padding: 12px 24px; border-radius: 50px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 15px rgba(14,165,233,0.4); transition: all 0.2s; font-size: 1.1rem; }
         #btn-feedback:hover { background: #fff; transform: translateY(-2px); box-shadow: 0 6px 20px rgba(255,255,255,0.4);}
         #feedback-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 100; justify-content: center; align-items: center; backdrop-filter: blur(8px); }
-        .modal-content { background: rgba(15,23,42,0.9); padding: 30px; border-radius: 16px; width: 90%; max-width: 400px; border: 1px solid var(--accent); position: relative; box-shadow: 0 10px 40px rgba(0,0,0,0.8); }
-        .close-btn { position: absolute; top: 15px; right: 20px; font-size: 1.5rem; color: var(--text); cursor: pointer; background: none; border: none; transition: 0.2s;}
+        .modal-content { background: rgba(15,23,42,0.9); padding: 35px; border-radius: 16px; width: 90%; max-width: 450px; border: 1px solid var(--accent); position: relative; box-shadow: 0 10px 40px rgba(0,0,0,0.8); }
+        .close-btn { position: absolute; top: 15px; right: 20px; font-size: 1.8rem; color: var(--text); cursor: pointer; background: none; border: none; transition: 0.2s;}
         .close-btn:hover { color: var(--accent); }
-        .modal-content input, .modal-content textarea { width: 100%; margin-top: 12px; padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.3); color: var(--text); box-sizing: border-box; font-family: inherit; resize: vertical; transition: 0.3s;}
+        .modal-content input, .modal-content textarea { width: 100%; margin-top: 15px; padding: 14px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.3); color: var(--text); box-sizing: border-box; font-family: inherit; resize: vertical; transition: 0.3s; font-size: 1.1rem; }
         .modal-content input:focus, .modal-content textarea:focus { outline: none; border-color: var(--accent); background: rgba(0,0,0,0.5); box-shadow: 0 0 10px rgba(14,165,233,0.3);}
-        .modal-content button[type="submit"] { margin-top: 20px; width: 100%; background: linear-gradient(135deg, var(--cnot-color), #059669); color: white; border: none; padding: 12px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: all 0.2s; box-shadow: 0 4px 15px rgba(16,185,129,0.3);}
-        .modal-content button[type="submit"]:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(16,185,129,0.5); }
+        .modal-content button[type="submit"] { margin-top: 25px; width: 100%; background: linear-gradient(135deg, var(--cnot-color), #059669); color: white; border: none; padding: 14px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: all 0.2s; box-shadow: 0 4px 15px rgba(16,185,129,0.3); font-size: 1.2rem; }
 
-        @media (max-width: 800px) { body { height: auto; overflow: auto; } #top-half { flex-direction: column; } #canvas-container { width: 100%; height: auto; } #panel-container { width: 100%; border-left: none; flex: none;} #bottom-half { flex-direction: column; height: auto; } #toolbar { width: 100%; border-right: none; border-bottom: 1px solid var(--glass-border); } }
+        @media (max-width: 900px) { #top-half { flex-direction: column; } #canvas-container { width: 100%; height: 400px; } #panel-container { width: 100%; max-width: none; } #bottom-half { flex-direction: column; height: auto; } #toolbar { width: 100%; border-right: none;} }
     </style>
 </head>
 <body>
@@ -139,15 +131,18 @@
         <div id="canvas-container"></div>
 
         <div id="panel-container">
-            <div class="lang-selector">
-                <button class="lang-btn active" onclick="setLang('pt')">PT</button>
-                <button class="lang-btn" onclick="setLang('en')">EN</button>
-                <button class="lang-btn" onclick="setLang('es')">ES</button>
-                <button class="lang-btn" onclick="setLang('fr')">FR</button>
-                <button class="lang-btn" onclick="setLang('ru')">RU</button>
-                <button class="lang-btn" onclick="setLang('ar')">AR</button>
-                <button class="lang-btn" onclick="setLang('fa')">FA</button>
-                <button class="lang-btn" onclick="setLang('zh')">ZH</button>
+            <div class="header-controls">
+                <div class="lang-selector">
+                    <button class="lang-btn active" onclick="setLang('pt')">PT</button>
+                    <button class="lang-btn" onclick="setLang('en')">EN</button>
+                    <button class="lang-btn" onclick="setLang('es')">ES</button>
+                    <button class="lang-btn" onclick="setLang('fr')">FR</button>
+                    <button class="lang-btn" onclick="setLang('ru')">RU</button>
+                    <button class="lang-btn" onclick="setLang('ar')">AR</button>
+                    <button class="lang-btn" onclick="setLang('fa')">FA</button>
+                    <button class="lang-btn" onclick="setLang('zh')">ZH</button>
+                </div>
+                <button id="btn-rotate" onclick="toggleRotation()">Pausar Rotação</button>
             </div>
 
             <h2 id="lbl-title">ESFERA DE BLOCH</h2>
@@ -158,12 +153,11 @@
             </div>
             
             <div id="state-vector">Carregando vetor...</div>
-            <div id="math-display">Carregando simulador matemático...</div>
+            <div id="math-display">$$ \text{Iniciando Simulador Matemático...} $$</div>
 
-            <!-- Controles Manuais Híbridos (Slider + Digitação) -->
             <div class="manual-controls">
                 <div class="slider-header">
-                    <label class="tooltip" id="tip-theta" data-tip="Ângulo entre os pólos.">θ (Latitude / Probabilidade)</label>
+                    <label id="tip-theta">θ (Latitude / Probabilidade)</label>
                     <div class="input-group">
                         <input type="number" id="theta-input" min="0" max="3.14" step="0.01" value="0.00">
                         <span style="color: var(--theta-color);">rad</span>
@@ -172,7 +166,7 @@
                 <input type="range" id="theta" min="0" max="3.1415" step="0.01" value="0">
                 
                 <div class="slider-header">
-                    <label class="tooltip" id="tip-phi" data-tip="Fase relativa quântica.">φ (Longitude / Fase)</label>
+                    <label id="tip-phi">φ (Longitude / Fase)</label>
                     <div class="input-group">
                         <input type="number" id="phi-input" min="0" max="6.28" step="0.01" value="0.00">
                         <span style="color: var(--phi-color);">rad</span>
@@ -190,57 +184,41 @@
 
     <div id="bottom-half">
         <div id="toolbar">
-            <h3 id="lbl-tools" style="margin:0; font-size: 1rem; color: #cbd5e1; letter-spacing: 1px;">Ferramentas</h3>
+            <h3 id="lbl-tools" style="margin:0; font-size: 1.1rem; color: #cbd5e1; letter-spacing: 1px;">Ferramentas Avançadas</h3>
             
             <div class="toolbar-row">
                 <span id="lbl-q0" class="active" onclick="setActiveQubit(0)">q_0</span>
-                <button class="btn-gate g-h tooltip" id="tip-h0" data-tip="Hadamard: Cria superposição." draggable="true" ondragstart="dragStartToolbar(event, 'H', 0)" onclick="addGate('H', 0)">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>H
-                </button>
-                <button class="btn-gate g-x tooltip" id="tip-x0" data-tip="Pauli-X: Inverte estado (NOT)." draggable="true" ondragstart="dragStartToolbar(event, 'X', 0)" onclick="addGate('X', 0)">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3v18"/><path d="M3 17l4 4 4-4"/><path d="M7 21V3"/><path d="M21 7l-4-4-4 4"/></svg>X
-                </button>
-                <button class="btn-gate g-m tooltip" id="tip-m0" data-tip="Medir: Colapsa em 0 ou 1." draggable="true" ondragstart="dragStartToolbar(event, 'M', 0)" onclick="addGate('M', 0)">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 14l4-4"/><path d="M3 12a9 9 0 1 0 18 0"/></svg>M
-                </button>
+                <button class="btn-gate g-h" draggable="true" ondragstart="dragStartToolbar(event, 'H', 0)" onclick="addGate('H', 0)">H</button>
+                <button class="btn-gate g-x" draggable="true" ondragstart="dragStartToolbar(event, 'X', 0)" onclick="addGate('X', 0)">X</button>
+                <button class="btn-gate g-r" draggable="true" ondragstart="dragStartToolbar(event, 'Rx', 0)" onclick="addGate('Rx', 0)">Rx</button>
+                <button class="btn-gate g-r" draggable="true" ondragstart="dragStartToolbar(event, 'Rz', 0)" onclick="addGate('Rz', 0)">Rz</button>
+                <button class="btn-gate g-m" draggable="true" ondragstart="dragStartToolbar(event, 'M', 0)" onclick="addGate('M', 0)">M</button>
             </div>
             
             <div class="toolbar-row">
                 <span id="lbl-q1" onclick="setActiveQubit(1)">q_1</span>
-                <button class="btn-gate g-h" draggable="true" ondragstart="dragStartToolbar(event, 'H', 1)" onclick="addGate('H', 1)">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>H
-                </button>
-                <button class="btn-gate g-x" draggable="true" ondragstart="dragStartToolbar(event, 'X', 1)" onclick="addGate('X', 1)">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3v18"/><path d="M3 17l4 4 4-4"/><path d="M7 21V3"/><path d="M21 7l-4-4-4 4"/></svg>X
-                </button>
-                <button class="btn-gate g-m" draggable="true" ondragstart="dragStartToolbar(event, 'M', 1)" onclick="addGate('M', 1)">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 14l4-4"/><path d="M3 12a9 9 0 1 0 18 0"/></svg>M
-                </button>
+                <button class="btn-gate g-h" draggable="true" ondragstart="dragStartToolbar(event, 'H', 1)" onclick="addGate('H', 1)">H</button>
+                <button class="btn-gate g-x" draggable="true" ondragstart="dragStartToolbar(event, 'X', 1)" onclick="addGate('X', 1)">X</button>
+                <button class="btn-gate g-r" draggable="true" ondragstart="dragStartToolbar(event, 'Rx', 1)" onclick="addGate('Rx', 1)">Rx</button>
+                <button class="btn-gate g-r" draggable="true" ondragstart="dragStartToolbar(event, 'Rz', 1)" onclick="addGate('Rz', 1)">Rz</button>
+                <button class="btn-gate g-m" draggable="true" ondragstart="dragStartToolbar(event, 'M', 1)" onclick="addGate('M', 1)">M</button>
             </div>
             
             <div class="toolbar-row">
                 <span id="lbl-q2" onclick="setActiveQubit(2)">q_2</span>
-                <button class="btn-gate g-h" draggable="true" ondragstart="dragStartToolbar(event, 'H', 2)" onclick="addGate('H', 2)">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>H
-                </button>
-                <button class="btn-gate g-x" draggable="true" ondragstart="dragStartToolbar(event, 'X', 2)" onclick="addGate('X', 2)">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3v18"/><path d="M3 17l4 4 4-4"/><path d="M7 21V3"/><path d="M21 7l-4-4-4 4"/></svg>X
-                </button>
-                <button class="btn-gate g-m" draggable="true" ondragstart="dragStartToolbar(event, 'M', 2)" onclick="addGate('M', 2)">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 14l4-4"/><path d="M3 12a9 9 0 1 0 18 0"/></svg>M
-                </button>
+                <button class="btn-gate g-h" draggable="true" ondragstart="dragStartToolbar(event, 'H', 2)" onclick="addGate('H', 2)">H</button>
+                <button class="btn-gate g-x" draggable="true" ondragstart="dragStartToolbar(event, 'X', 2)" onclick="addGate('X', 2)">X</button>
+                <button class="btn-gate g-r" draggable="true" ondragstart="dragStartToolbar(event, 'Rx', 2)" onclick="addGate('Rx', 2)">Rx</button>
+                <button class="btn-gate g-r" draggable="true" ondragstart="dragStartToolbar(event, 'Rz', 2)" onclick="addGate('Rz', 2)">Rz</button>
+                <button class="btn-gate g-m" draggable="true" ondragstart="dragStartToolbar(event, 'M', 2)" onclick="addGate('M', 2)">M</button>
             </div>
             
             <hr style="border-color: var(--glass-border); width: 100%;">
             
             <div class="toolbar-row">
-                <span style="width: 50px;">CNOT</span>
-                <button class="btn-gate" draggable="true" ondragstart="dragStartToolbar(event, 'CNOT', 0, 1)" style="width:auto; padding: 6px 10px;" onclick="addGate('CNOT', 0, 1)">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg> 0→1
-                </button>
-                <button class="btn-gate" draggable="true" ondragstart="dragStartToolbar(event, 'CNOT', 1, 2)" style="width:auto; padding: 6px 10px;" onclick="addGate('CNOT', 1, 2)">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg> 1→2
-                </button>
+                <span style="width: 60px;">CNOT</span>
+                <button class="btn-gate" draggable="true" ondragstart="dragStartToolbar(event, 'CNOT', 0, 1)" style="width:auto; padding: 6px 12px;" onclick="addGate('CNOT', 0, 1)">0→1</button>
+                <button class="btn-gate" draggable="true" ondragstart="dragStartToolbar(event, 'CNOT', 1, 2)" style="width:auto; padding: 6px 12px;" onclick="addGate('CNOT', 1, 2)">1→2</button>
             </div>
         </div>
         
@@ -253,13 +231,14 @@
         </div>
     </div>
 
+    <!-- Feedback UI -->
     <button id="btn-feedback" onclick="document.getElementById('feedback-modal').style.display='flex'">Feedback</button>
 
     <div id="feedback-modal">
         <div class="modal-content">
             <button class="close-btn" onclick="document.getElementById('feedback-modal').style.display='none'">&times;</button>
             <h3 id="fb-title" style="color: var(--accent); margin-top:0; margin-bottom: 5px;">Envie sua mensagem</h3>
-            <p id="fb-desc" style="font-size: 0.85rem; color: #cbd5e1; margin-top: 0;">Críticas, sugestões ou correções são bem-vindas!</p>
+            <p id="fb-desc" style="font-size: 0.95rem; color: #cbd5e1; margin-top: 0;">Críticas, sugestões ou correções são bem-vindas!</p>
             
             <form action="https://formspree.io/f/xbdngjvr" method="POST" autocomplete="off">
                 <input type="text" id="fb-name" name="Nome" placeholder="Seu Nome" required>
@@ -271,31 +250,39 @@
     </div>
 
     <script>
-        // Dicionário Completo (Controles, Ferramentas, Matemática e Feedback)
+        // Dicionário Rigoroso e Completo
         const dict = {
-            pt: { title: "ESFERA DE BLOCH", math: "Inicie o circuito ou use os controles manuais.", tools: "Ferramentas", reset: "Reset", undo: "Desfazer", tipTh: "Ângulo entre os pólos.", tipPh: "Fase relativa quântica.", lblTh: "θ (Latitude / Probabilidade)", lblPh: "φ (Longitude / Fase Quântica)", mMeas: "Medição", mEnt: "Emaranhado", tplLbl: "Algoritmos Clássicos (Templates):", tpl0: "-- Escolha um Circuito --", tpl1: "Estado de Bell (Emaranhamento Clássico)", tpl2: "Estado GHZ (Emaranhamento 3 Qubits)", tpl3: "Superposição Total", lblCnot: "Emaranhado/Trocado", fbBtn: "Feedback", fbTitle: "Envie sua mensagem", fbDesc: "Críticas, sugestões ou correções são bem-vindas!", fbName: "Seu Nome", fbEmail: "Seu E-mail", fbMsg: "Escreva aqui...", fbSend: "Enviar Mensagem" },
-            en: { title: "BLOCH SPHERE", math: "Start the circuit or use manual controls.", tools: "Tools", reset: "Reset", undo: "Undo", tipTh: "Angle between poles.", tipPh: "Quantum relative phase.", lblTh: "θ (Latitude / Probability)", lblPh: "φ (Longitude / Phase)", mMeas: "Measure", mEnt: "Entangled", tplLbl: "Classic Algorithms (Templates):", tpl0: "-- Choose a Circuit --", tpl1: "Bell State (Classic Entanglement)", tpl2: "GHZ State (3-Qubit Entanglement)", tpl3: "Total Superposition", lblCnot: "Entangled/Swapped", fbBtn: "Feedback", fbTitle: "Send a message", fbDesc: "Feedback, suggestions, or corrections are welcome!", fbName: "Your Name", fbEmail: "Your Email", fbMsg: "Write here...", fbSend: "Send Message" },
-            es: { title: "ESFERA DE BLOCH", math: "Inicie el circuito o use controles manuales.", tools: "Herramientas", reset: "Reiniciar", undo: "Deshacer", tipTh: "Ángulo entre polos.", tipPh: "Fase cuántica relativa.", lblTh: "θ (Latitud / Probabilidad)", lblPh: "φ (Longitud / Fase)", mMeas: "Medición", mEnt: "Entrelazado", tplLbl: "Algoritmos Clásicos (Plantillas):", tpl0: "-- Elija un Circuito --", tpl1: "Estado de Bell (Entrelazamiento)", tpl2: "Estado GHZ (3 Qubits)", tpl3: "Superposición Total", lblCnot: "Entrelazado/Intercambiado", fbBtn: "Comentarios", fbTitle: "Enviar mensaje", fbDesc: "¡Sugerencias o correcciones son bienvenidas!", fbName: "Tu Nombre", fbEmail: "Tu Correo", fbMsg: "Escribe aquí...", fbSend: "Enviar Mensaje" },
-            fr: { title: "SPHÈRE DE BLOCH", math: "Démarrez le circuit ou utilisez les contrôles.", tools: "Outils", reset: "Réinitialiser", undo: "Annuler", tipTh: "Angle entre les pôles.", tipPh: "Phase quantique relative.", lblTh: "θ (Latitude / Probabilité)", lblPh: "φ (Longitude / Phase)", mMeas: "Mesure", mEnt: "Intriqué", tplLbl: "Algorithmes Classiques:", tpl0: "-- Choisissez un Circuit --", tpl1: "État de Bell (Intrication)", tpl2: "État GHZ (3 Qubits)", tpl3: "Superposition Totale", lblCnot: "Intriqué/Échangé", fbBtn: "Commentaires", fbTitle: "Envoyer un message", fbDesc: "Les suggestions sont les bienvenues!", fbName: "Votre Nom", fbEmail: "Votre Email", fbMsg: "Écrivez ici...", fbSend: "Envoyer" },
-            ru: { title: "СФЕРА БЛОХА", math: "Запустите цепь или используйте контроль.", tools: "Инструменты", reset: "Сброс", undo: "Отменить", tipTh: "Угол между полюсами.", tipPh: "Квантовая фаза.", lblTh: "θ (Широта / Вероятность)", lblPh: "φ (Долгота / Фаза)", mMeas: "Измерение", mEnt: "Запутанный", tplLbl: "Классические алгоритмы:", tpl0: "-- Выберите цепь --", tpl1: "Состояние Белла", tpl2: "Состояние GHZ", tpl3: "Полная суперпозиция", lblCnot: "Запутанный/Обмененный", fbBtn: "Отзыв", fbTitle: "Отправить сообщение", fbDesc: "Приветствуются отзывы или исправления!", fbName: "Ваше Имя", fbEmail: "Ваш Email", fbMsg: "Пишите здесь...", fbSend: "Отправить" },
-            ar: { title: "كرة بلوخ", math: "ابدأ الدائرة أو استخدم التحكم.", tools: "أدوات", reset: "إعادة ضبط", undo: "تراجع", tipTh: "الزاوية بين الأقطاب.", tipPh: "المرحلة الكمومية.", lblTh: "θ (خط العرض)", lblPh: "φ (خط الطول)", mMeas: "قياس", mEnt: "متشابك", tplLbl: "الخوارزميات الكلاسيكية:", tpl0: "-- اختر دائرة --", tpl1: "حالة بيل", tpl2: "حالة GHZ", tpl3: "تراكب كلي", lblCnot: "متشابك/متبادل", fbBtn: "ملاحظات", fbTitle: "إرسال رسالة", fbDesc: "التعليقات والاقتراحات مرحب بها!", fbName: "اسمك", fbEmail: "بريدك الإلكتروني", fbMsg: "اكتب هنا...", fbSend: "إرسال" },
-            fa: { title: "کره بلاخ", math: "مدار را شروع کنید یا دستی تنظیم کنید.", tools: "ابزارها", reset: "بازنشانی", undo: "لغو", tipTh: "زاویه قطب‌ها.", tipPh: "فاز کوانتومی.", lblTh: "θ (عرض جغرافیایی)", lblPh: "φ (طول جغرافیایی)", mMeas: "اندازه‌گیری", mEnt: "درهم‌تنیده", tplLbl: "الگوریتم‌های کلاسیک:", tpl0: "-- مدار را انتخاب کنید --", tpl1: "حالت بل", tpl2: "حالت GHZ", tpl3: "برهم‌نهی کل", lblCnot: "درهم‌تنیده/تعویض", fbBtn: "بازخورد", fbTitle: "ارسال پیام", fbDesc: "پیشنهادات مورد استقبال است!", fbName: "نام شما", fbEmail: "ایمیل شما", fbMsg: "اینجا بنویسید...", fbSend: "ارسال" },
-            zh: { title: "布洛赫球面", math: "启动电路或使用手动控制。", tools: "工具", reset: "重置", undo: "撤销", tipTh: "极点之间的角度。", tipPh: "量子相位。", lblTh: "θ (纬度 / 概率)", lblPh: "φ (经度 / 相位)", mMeas: "测量", mEnt: "纠缠态", tplLbl: "经典算法:", tpl0: "-- 选择电路 --", tpl1: "贝尔态", tpl2: "GHZ 态", tpl3: "完全叠加", lblCnot: "纠缠/交换", fbBtn: "反馈", fbTitle: "发送消息", fbDesc: "欢迎提供反馈、建议或更正！", fbName: "您的姓名", fbEmail: "您的邮箱", fbMsg: "在此书写...", fbSend: "发送消息" }
+            pt: { title: "ESFERA DE BLOCH", math: "Inicie o circuito ou use os controles manuais.", tools: "Ferramentas Avançadas", reset: "Reset", undo: "Desfazer", rotStop: "Pausar 3D", rotStart: "Girar 3D", lblTh: "θ (Latitude / Probabilidade)", lblPh: "φ (Longitude / Fase Quântica)", mMeas: "Medição", mEnt: "Estado Misto (Emaranhado)", tplLbl: "Algoritmos Clássicos (Templates):", tpl0: "-- Escolha um Circuito --", tpl1: "Estado de Bell (Emaranhamento Clássico)", tpl2: "Estado GHZ (Emaranhamento 3 Qubits)", tpl3: "Superposição Total", lblCnot: "Emaranhado", prmptAng: "Digite o ângulo (em radianos, ex: 1.57 para π/2):", fbBtn: "Feedback", fbTitle: "Envie sua mensagem", fbDesc: "Críticas, sugestões ou correções são bem-vindas!", fbName: "Seu Nome", fbEmail: "Seu E-mail", fbMsg: "Escreva aqui...", fbSend: "Enviar Mensagem" },
+            en: { title: "BLOCH SPHERE", math: "Start the circuit or use manual controls.", tools: "Advanced Tools", reset: "Reset", undo: "Undo", rotStop: "Pause 3D", rotStart: "Spin 3D", lblTh: "θ (Latitude / Probability)", lblPh: "φ (Longitude / Phase)", mMeas: "Measure", mEnt: "Mixed State (Entangled)", tplLbl: "Classic Algorithms (Templates):", tpl0: "-- Choose a Circuit --", tpl1: "Bell State (Classic Entanglement)", tpl2: "GHZ State (3-Qubit Entanglement)", tpl3: "Total Superposition", lblCnot: "Entangled", prmptAng: "Enter the angle (in radians, e.g., 1.57 for π/2):", fbBtn: "Feedback", fbTitle: "Send a message", fbDesc: "Feedback, suggestions, or corrections are welcome!", fbName: "Your Name", fbEmail: "Your Email", fbMsg: "Write here...", fbSend: "Send Message" },
+            es: { title: "ESFERA DE BLOCH", math: "Inicie el circuito o use controles manuales.", tools: "Herramientas Avanzadas", reset: "Reiniciar", undo: "Deshacer", rotStop: "Pausar 3D", rotStart: "Girar 3D", lblTh: "θ (Latitud / Probabilidad)", lblPh: "φ (Longitud / Fase)", mMeas: "Medición", mEnt: "Estado Mixto", tplLbl: "Algoritmos Clásicos (Plantillas):", tpl0: "-- Elija un Circuito --", tpl1: "Estado de Bell (Entrelazamiento)", tpl2: "Estado GHZ (3 Qubits)", tpl3: "Superposición Total", lblCnot: "Entrelazado", prmptAng: "Ingrese el ángulo (en radianes, ej: 1.57 para π/2):", fbBtn: "Comentarios", fbTitle: "Enviar mensaje", fbDesc: "¡Sugerencias o correcciones son bienvenidas!", fbName: "Tu Nombre", fbEmail: "Tu Correo", fbMsg: "Escribe aquí...", fbSend: "Enviar Mensaje" },
+            fr: { title: "SPHÈRE DE BLOCH", math: "Démarrez le circuit ou utilisez les contrôles.", tools: "Outils Avancés", reset: "Réinitialiser", undo: "Annuler", rotStop: "Pause 3D", rotStart: "Tourner 3D", lblTh: "θ (Latitude / Probabilité)", lblPh: "φ (Longitude / Phase)", mMeas: "Mesure", mEnt: "Intriqué", tplLbl: "Algorithmes Classiques:", tpl0: "-- Choisissez un Circuit --", tpl1: "État de Bell (Intrication)", tpl2: "État GHZ (3 Qubits)", tpl3: "Superposition Totale", lblCnot: "Intriqué", prmptAng: "Entrez l'angle (en radians, ex: 1.57 pour π/2):", fbBtn: "Commentaires", fbTitle: "Envoyer un message", fbDesc: "Les suggestions sont les bienvenues!", fbName: "Votre Nom", fbEmail: "Votre Email", fbMsg: "Écrivez ici...", fbSend: "Envoyer" },
+            ru: { title: "СФЕРА БЛОХА", math: "Запустите цепь или используйте контроль.", tools: "Инструменты", reset: "Сброс", undo: "Отменить", rotStop: "Пауза 3D", rotStart: "Вращать 3D", lblTh: "θ (Широта / Вероятность)", lblPh: "φ (Долгота / Фаза)", mMeas: "Измерение", mEnt: "Запутанный", tplLbl: "Классические алгоритмы:", tpl0: "-- Выберите цепь --", tpl1: "Состояние Белла", tpl2: "Состояние GHZ", tpl3: "Полная суперпозиция", lblCnot: "Запутанный", prmptAng: "Введите угол (в радианах, ex: 1.57 for π/2):", fbBtn: "Отзыв", fbTitle: "Отправить сообщение", fbDesc: "Приветствуются отзывы или исправления!", fbName: "Ваше Имя", fbEmail: "Ваш Email", fbMsg: "Пишите здесь...", fbSend: "Отправить" },
+            ar: { title: "كرة بلوخ", math: "ابدأ الدائرة أو استخدم التحكم.", tools: "أدوات متقدمة", reset: "إعادة ضبط", undo: "تراجع", rotStop: "إيقاف مؤقت 3D", rotStart: "تدوير 3D", lblTh: "θ (خط العرض)", lblPh: "φ (خط الطول)", mMeas: "قياس", mEnt: "متشابك", tplLbl: "الخوارزميات الكلاسيكية:", tpl0: "-- اختر دائرة --", tpl1: "حالة بيل", tpl2: "حالة GHZ", tpl3: "تراكب كلي", lblCnot: "متشابك", prmptAng: "أدخل الزاوية (بالراديان، e.g., 1.57 for π/2):", fbBtn: "ملاحظات", fbTitle: "إرسال رسالة", fbDesc: "التعليقات والاقتراحات مرحب بها!", fbName: "اسمك", fbEmail: "بريدك الإلكتروني", fbMsg: "اكتب هنا...", fbSend: "إرسال" },
+            fa: { title: "کره بلاخ", math: "مدار را شروع کنید یا دستی تنظیم کنید.", tools: "ابزارهای پیشرفته", reset: "بازنشانی", undo: "لغو", rotStop: "مکث 3D", rotStart: "چرخش 3D", lblTh: "θ (عرض جغرافیایی)", lblPh: "φ (طول جغرافیایی)", mMeas: "اندازه‌گیری", mEnt: "درهم‌تنیده", tplLbl: "الگوریتم‌های کلاسیک:", tpl0: "-- مدار را انتخاب کنید --", tpl1: "حالت بل", tpl2: "حالت GHZ", tpl3: "برهم‌نهی کل", lblCnot: "درهم‌تنیده", prmptAng: "زاویه را وارد کنید (به رادیان، e.g., 1.57 for π/2):", fbBtn: "بازخورد", fbTitle: "ارسال پیام", fbDesc: "پیشنهادات مورد استقبال است!", fbName: "نام شما", fbEmail: "ایمیل شما", fbMsg: "اینجا بنویسید...", fbSend: "ارسال" },
+            zh: { title: "布洛赫球面", math: "启动电路或使用手动控制。", tools: "高级工具", reset: "重置", undo: "撤销", rotStop: "暂停 3D", rotStart: "旋转 3D", lblTh: "θ (纬度 / 概率)", lblPh: "φ (经度 / 相位)", mMeas: "测量", mEnt: "纠缠态", tplLbl: "经典算法:", tpl0: "-- 选择电路 --", tpl1: "贝尔态", tpl2: "GHZ 态", tpl3: "完全叠加", lblCnot: "纠缠", prmptAng: "输入角度（以弧度为单位，e.g., 1.57 for π/2）:", fbBtn: "反馈", fbTitle: "发送消息", fbDesc: "欢迎提供反馈、建议或更正！", fbName: "您的姓名", fbEmail: "您的邮箱", fbMsg: "在此书写...", fbSend: "发送消息" }
         };
         
         let currentLang = 'pt';
         let lastUpdateType = 'none';
+        let isRotating = true;
         
-        // Renderização MathJax (Robusta e Segura)
         window.renderMathSafe = function() {
             if (typeof MathJax !== 'undefined' && MathJax.typesetPromise) {
                 MathJax.typesetClear();
                 MathJax.typesetPromise().catch(err => console.log('MathJax', err));
             } else {
                 clearTimeout(window.mathRetry);
-                window.mathRetry = setTimeout(window.renderMathSafe, 100);
+                window.mathRetry = setTimeout(window.renderMathSafe, 150);
             }
         };
+
+        function toggleRotation() {
+            isRotating = !isRotating;
+            const btn = document.getElementById('btn-rotate');
+            btn.innerText = isRotating ? dict[currentLang].rotStop : dict[currentLang].rotStart;
+            if(isRotating) btn.classList.remove('paused');
+            else btn.classList.add('paused');
+        }
 
         function setLang(l) {
             currentLang = l;
@@ -304,7 +291,6 @@
                 if(b.innerText.toLowerCase() === l || (l === 'pt' && b.innerText === 'PT')) b.classList.add('active');
             });
             
-            // Textos Interface
             document.getElementById('lbl-title').innerText = dict[l].title;
             document.getElementById('lbl-tools').innerText = dict[l].tools;
             document.getElementById('btn-reset').innerText = dict[l].reset;
@@ -312,7 +298,8 @@
             document.getElementById('tip-theta').innerText = dict[l].lblTh;
             document.getElementById('tip-phi').innerText = dict[l].lblPh;
             
-            // Textos Formulário Feedback
+            document.getElementById('btn-rotate').innerText = isRotating ? dict[l].rotStop : dict[l].rotStart;
+
             document.getElementById('btn-feedback').innerText = dict[l].fbBtn;
             document.getElementById('fb-title').innerText = dict[l].fbTitle;
             document.getElementById('fb-desc').innerText = dict[l].fbDesc;
@@ -321,7 +308,6 @@
             document.getElementById('fb-msg').placeholder = dict[l].fbMsg;
             document.getElementById('fb-send').innerText = dict[l].fbSend;
 
-            // Template Menu
             document.getElementById('lbl-template').innerText = dict[l].tplLbl;
             let currentSelect = document.getElementById('circuit-template').value;
             document.getElementById('circuit-template').innerHTML = `
@@ -338,12 +324,13 @@
             } else {
                 processHistory(); 
             }
-            updateSphere(activeQubit);
+            updateUIState();
         }
 
         const C = {
             add: (a, b) => ({ r: a.r + b.r, i: a.i + b.i }), sub: (a, b) => ({ r: a.r - b.r, i: a.i - b.i }),
-            mulReal: (a, x) => ({ r: a.r * x, i: a.i * x }), mag: a => Math.sqrt(a.r * a.r + a.i * a.i), arg: a => Math.atan2(a.i, a.r)
+            mulReal: (a, x) => ({ r: a.r * x, i: a.i * x }), mul: (a, b) => ({ r: a.r * b.r - a.i * b.i, i: a.r * b.i + a.i * b.r }),
+            mag: a => Math.sqrt(a.r * a.r + a.i * a.i), arg: a => Math.atan2(a.i, a.r)
         };
 
         function fmtC(c) {
@@ -364,7 +351,7 @@
             activeQubit = id;
             document.querySelectorAll('#toolbar span.active').forEach(el => el.classList.remove('active'));
             document.getElementById(`lbl-q${id}`).classList.add('active');
-            updateSphere(id);
+            updateUIState();
         }
 
         function loadTemplate(val) {
@@ -381,7 +368,6 @@
             else { resetCircuit(); }
         }
 
-        /* Drag & Drop */
         function dragStartToolbar(ev, type, q1, q2 = null) {
             ev.dataTransfer.effectAllowed = "copy"; ev.dataTransfer.setData("type", type);
             if(q2 !== null) { ev.dataTransfer.setData("c", q1); ev.dataTransfer.setData("t", q2); }
@@ -398,8 +384,8 @@
             
             let rect = document.getElementById('circuit-grid').getBoundingClientRect();
             let y = ev.clientY - rect.top; let x = ev.clientX - rect.left + timeline.scrollLeft;
-            let targetQ = 0; if (y > 80) targetQ = 2; else if (y > 40) targetQ = 1;
-            let targetStep = Math.max(0, Math.floor(x / 50));
+            let targetQ = 0; if (y > 90) targetQ = 2; else if (y > 45) targetQ = 1;
+            let targetStep = Math.max(0, Math.floor(x / 55));
 
             if (moveIdx !== "") {
                 moveIdx = parseInt(moveIdx); let gateToMove = circuitHistory[moveIdx]; circuitHistory.splice(moveIdx, 1);
@@ -411,6 +397,15 @@
                 let c = ev.dataTransfer.getData("c"); let t = ev.dataTransfer.getData("t");
                 if (type === 'CNOT' && c !== "") { step.c = parseInt(c); step.t = parseInt(t); step.q = parseInt(c); }
                 if (type === 'M') { const p0 = C.mag(qubitsState[step.q].a) ** 2; step.val = (Math.random() < p0) ? 0 : 1; }
+                
+                if (type === 'Rx' || type === 'Rz') {
+                    let param = prompt(dict[currentLang].prmptAng, "1.57");
+                    if (param === null) return;
+                    let numVal = parseFloat(param.replace(',', '.'));
+                    if (isNaN(numVal)) return;
+                    step.angle = numVal;
+                }
+                
                 circuitHistory.splice(targetStep, 0, step); setActiveQubit(step.q);
             }
             lastUpdateType = 'circuit'; processHistory();
@@ -421,6 +416,11 @@
             let step = { type, q: q1 };
             if (type === 'CNOT') { step.c = q1; step.t = q2; setActiveQubit(q2); }
             if (type === 'M') { const p0 = C.mag(qubitsState[q1].a) ** 2; step.val = (Math.random() < p0) ? 0 : 1; }
+            if (type === 'Rx' || type === 'Rz') {
+                let param = prompt(dict[currentLang].prmptAng, "1.57");
+                if (param === null || isNaN(parseFloat(param.replace(',', '.')))) return;
+                step.angle = parseFloat(param.replace(',', '.'));
+            }
             circuitHistory.push(step); processHistory();
             const timeline = document.getElementById('timeline-container'); timeline.scrollLeft = timeline.scrollWidth;
         }
@@ -435,9 +435,9 @@
             initStates(); let lastMath = "";
 
             circuitHistory.forEach((gate) => {
-                let q;
+                let q = qubitsState[gate.q]; if(q && q.ent && gate.type !== 'M') return;
+                
                 if (gate.type === 'H') {
-                    q = qubitsState[gate.q]; if(q.ent) return;
                     let oldA = fmtC(q.a), oldB = fmtC(q.b);
                     let na = C.mulReal(C.add(q.a, q.b), 1/Math.sqrt(2)); let nb = C.mulReal(C.sub(q.a, q.b), 1/Math.sqrt(2));
                     q.a = na; q.b = nb;
@@ -445,11 +445,25 @@
                     lastMath = `$$ H|\\psi_{q${gate.q}}\\rangle = \\frac{1}{\\sqrt{2}}\\begin{bmatrix}1 & 1 \\\\ 1 & -1\\end{bmatrix} \\begin{bmatrix}${oldA} \\\\ ${oldB}\\end{bmatrix} = \\begin{bmatrix}${newA} \\\\ ${newB}\\end{bmatrix} $$`;
                 } 
                 else if (gate.type === 'X') {
-                    q = qubitsState[gate.q]; if(q.ent) return;
                     let oldA = fmtC(q.a), oldB = fmtC(q.b);
                     let temp = q.a; q.a = q.b; q.b = temp;
                     let newA = fmtC(q.a), newB = fmtC(q.b);
                     lastMath = `$$ X|\\psi_{q${gate.q}}\\rangle = \\begin{bmatrix}0 & 1 \\\\ 1 & 0\\end{bmatrix} \\begin{bmatrix}${oldA} \\\\ ${oldB}\\end{bmatrix} = \\begin{bmatrix}${newA} \\\\ ${newB}\\end{bmatrix} $$`;
+                }
+                else if (gate.type === 'Rx') {
+                    let oldA = q.a, oldB = q.b;
+                    let c = Math.cos(gate.angle/2); let s = Math.sin(gate.angle/2);
+                    let m00 = {r: c, i: 0}, m01 = {r: 0, i: -s}, m10 = {r: 0, i: -s}, m11 = {r: c, i: 0};
+                    q.a = C.add(C.mul(m00, oldA), C.mul(m01, oldB));
+                    q.b = C.add(C.mul(m10, oldA), C.mul(m11, oldB));
+                    lastMath = `$$ R_x(${gate.angle.toFixed(2)})|\\psi_{q${gate.q}}\\rangle = \\begin{bmatrix} \\cos(\\frac{${gate.angle.toFixed(2)}}{2}) & -i\\sin(\\frac{${gate.angle.toFixed(2)}}{2}) \\\\ -i\\sin(\\frac{${gate.angle.toFixed(2)}}{2}) & \\cos(\\frac{${gate.angle.toFixed(2)}}{2}) \\end{bmatrix} \\begin{bmatrix}${fmtC(oldA)} \\\\ ${fmtC(oldB)}\\end{bmatrix} = \\begin{bmatrix}${fmtC(q.a)} \\\\ ${fmtC(q.b)}\\end{bmatrix} $$`;
+                }
+                else if (gate.type === 'Rz') {
+                    let oldA = q.a, oldB = q.b;
+                    let exp1 = {r: Math.cos(-gate.angle/2), i: Math.sin(-gate.angle/2)};
+                    let exp2 = {r: Math.cos(gate.angle/2), i: Math.sin(gate.angle/2)};
+                    q.a = C.mul(exp1, oldA); q.b = C.mul(exp2, oldB);
+                    lastMath = `$$ R_z(${gate.angle.toFixed(2)})|\\psi_{q${gate.q}}\\rangle = \\begin{bmatrix} e^{-i\\frac{${gate.angle.toFixed(2)}}{2}} & 0 \\\\ 0 & e^{i\\frac{${gate.angle.toFixed(2)}}{2}} \\end{bmatrix} \\begin{bmatrix}${fmtC(oldA)} \\\\ ${fmtC(oldB)}\\end{bmatrix} = \\begin{bmatrix}${fmtC(q.a)} \\\\ ${fmtC(q.b)}\\end{bmatrix} $$`;
                 }
                 else if (gate.type === 'CNOT') {
                     let ctrl = qubitsState[gate.c], tgt = qubitsState[gate.t];
@@ -459,17 +473,17 @@
                     lastMath = `$$ \\text{CNOT: } q_{${gate.c}} \\to q_{${gate.t}} \\text{ (${dict[currentLang].lblCnot})} $$`;
                 }
                 else if (gate.type === 'M') {
-                    q = qubitsState[gate.q]; q.ent = false;
+                    q.ent = false; 
                     if (gate.val === 0) { q.a = {r: 1, i: 0}; q.b = {r: 0, i: 0}; } else { q.a = {r: 0, i: 0}; q.b = {r: 1, i: 0}; }
                     lastMath = `$$ \\text{${dict[currentLang].mMeas}: } q_{${gate.q}} \\to |${gate.val}\\rangle $$`;
                 }
             });
 
-            renderTimeline(); updateSphere(activeQubit); 
+            renderTimeline(); updateUIState(); 
             
             if(lastUpdateType === 'circuit' && lastMath !== "") {
                 document.getElementById('math-display').innerHTML = lastMath;
-                window.renderMathSafe(); // MathJax SÓ roda em circuitos para não travar
+                window.renderMathSafe(); 
             }
         }
 
@@ -480,24 +494,27 @@
                 if (gate.type === 'H' || gate.type === 'X') {
                     html += `<div class="gate-box ${gate.type==='X'?'gate-x':''}" draggable="true" ondragstart="dragStartTimeline(event, ${stepIdx})" style="grid-column: ${stepIdx+1}; grid-row: ${gate.q+1}" onclick="setActiveQubit(${gate.q})">${gate.type}</div>`;
                 }
+                else if (gate.type === 'Rx' || gate.type === 'Rz') {
+                    let label = `${gate.type}(${gate.angle})`;
+                    html += `<div class="gate-box gate-r" draggable="true" ondragstart="dragStartTimeline(event, ${stepIdx})" style="grid-column: ${stepIdx+1}; grid-row: ${gate.q+1}" onclick="setActiveQubit(${gate.q})">${label}</div>`;
+                }
                 else if (gate.type === 'CNOT') {
                     let top = Math.min(gate.c, gate.t) + 1; let bottom = Math.max(gate.c, gate.t) + 1;
-                    html += `<div class="cnot-v-line" style="grid-column: ${stepIdx+1}; grid-row: ${top}; margin-top: 20px; height: ${(bottom-top)*40}px;"></div>`;
+                    html += `<div class="cnot-v-line" style="grid-column: ${stepIdx+1}; grid-row: ${top}; margin-top: 20px; height: ${(bottom-top)*45}px;"></div>`;
                     html += `<div class="cnot-dot" draggable="true" ondragstart="dragStartTimeline(event, ${stepIdx})" style="grid-column: ${stepIdx+1}; grid-row: ${gate.c+1}; cursor: grab;"></div>`;
                     html += `<div class="cnot-target" draggable="true" ondragstart="dragStartTimeline(event, ${stepIdx})" style="grid-column: ${stepIdx+1}; grid-row: ${gate.t+1}; cursor: grab;" onclick="setActiveQubit(${gate.t})"></div>`;
                 }
                 else if (gate.type === 'M') {
                     let row = gate.q + 1;
                     html += `<div class="gate-box gate-m" draggable="true" ondragstart="dragStartTimeline(event, ${stepIdx})" style="grid-column: ${stepIdx+1}; grid-row: ${row}" onclick="setActiveQubit(${gate.q})">M</div>`;
-                    html += `<div class="measure-v-line" style="grid-column: ${stepIdx+1}; grid-row: ${row}; margin-top: 20px; height: ${(5-row)*40 - 30}px;"></div>`;
-                    // Textos do Medidor Agora São Grandes e Bonitos
+                    html += `<div class="measure-v-line" style="grid-column: ${stepIdx+1}; grid-row: ${row}; margin-top: 20px; height: ${(5-row)*45 - 35}px;"></div>`;
                     html += `<div class="c-bit-text" style="grid-column: ${stepIdx+1}; grid-row: 5;">${gate.val}</div>`;
                 }
                 grid.innerHTML += html;
             });
         }
 
-        /* --- MOTOR 3D --- */
+        /* --- MOTOR 3D: CÁLCULOS ROBUSTOS PARA EVITAR CRASH --- */
         const container = document.getElementById('canvas-container');
         const scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 1000); 
@@ -507,89 +524,86 @@
         const controls = new THREE.OrbitControls(camera, renderer.domElement);
         controls.enableDamping = true; controls.dampingFactor = 0.05;
 
-        const sphereGroup = new THREE.Group(); scene.add(sphereGroup);
-        sphereGroup.add(new THREE.Mesh(new THREE.SphereGeometry(2, 48, 24), new THREE.MeshBasicMaterial({ color: 0x3b82f6, wireframe: true, transparent: true, opacity: 0.1 })));
-        
-        const equator = new THREE.Mesh(new THREE.RingGeometry(1.98, 2.02, 64), new THREE.MeshBasicMaterial({ color: 0x00ffcc, side: THREE.DoubleSide, transparent: true, opacity: 0.3 }));
-        equator.rotation.x = Math.PI / 2; sphereGroup.add(equator);
-        
-        const axesGroup = new THREE.Group();
-        const axisMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.2 });
-        const xCyl = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 4.4, 8), axisMat); xCyl.rotation.z = Math.PI / 2;
-        const yCyl = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 4.4, 8), axisMat);
-        const zCyl = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 4.4, 8), axisMat); zCyl.rotation.x = Math.PI / 2;
-        axesGroup.add(xCyl, yCyl, zCyl); sphereGroup.add(axesGroup);
+        const spheresData = [];
 
-        function createAndAddLabel(text, color, x, y, z) {
+        // Rótulos instanciados no Grupo (Locais) para evitar explosão de vértices
+        function createAndAddLabel(group, text, color, x, y, z) {
             const canvas = document.createElement('canvas'); canvas.width = 256; canvas.height = 128;
             const ctx = canvas.getContext('2d'); ctx.font = 'bold 55px monospace'; ctx.fillStyle = color;
             ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(text, 128, 64);
             const texture = new THREE.CanvasTexture(canvas);
             const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: texture, depthTest: false, transparent: true }));
-            sprite.scale.set(0.6, 0.3, 1); sprite.position.set(x, y, z); sphereGroup.add(sprite); return sprite;
+            sprite.scale.set(0.7, 0.35, 1); 
+            sprite.position.set(x, y, z); 
+            group.add(sprite); 
+            return sprite;
         }
 
-        createAndAddLabel('|0⟩', '#38bdf8', 0, 2.2, 0); createAndAddLabel('|1⟩', '#38bdf8', 0, -2.2, 0);
-        createAndAddLabel('|+⟩(X)', '#94a3b8', 2.3, 0, 0); createAndAddLabel('|-⟩(-X)', '#94a3b8', -2.3, 0, 0);
-        createAndAddLabel('|i⟩(Y)', '#94a3b8', 0, 0, 2.3); createAndAddLabel('|-i⟩(-Y)', '#94a3b8', 0, 0, -2.3);
+        for(let i = 0; i < 3; i++) {
+            const group = new THREE.Group(); group.position.x = (i - 1) * 4.6; scene.add(group);
 
-        const thetaLabel = createAndAddLabel('θ: 0.00', '#f59e0b', 0, 0, 0); thetaLabel.scale.set(0.8, 0.4, 1); 
-        const phiLabel = createAndAddLabel('φ: 0.00', '#d946ef', 0, 0, 0); phiLabel.scale.set(0.8, 0.4, 1);
+            const mesh = new THREE.Mesh(new THREE.SphereGeometry(2, 128, 64), new THREE.MeshBasicMaterial({ color: 0x3b82f6, wireframe: true, transparent: true, opacity: 0.04 }));
+            group.add(mesh);
+            
+            const equator = new THREE.Mesh(new THREE.RingGeometry(1.98, 2.02, 64), new THREE.MeshBasicMaterial({ color: 0x00ffcc, side: THREE.DoubleSide, transparent: true, opacity: 0.2 }));
+            equator.rotation.x = Math.PI / 2; group.add(equator);
+            
+            const axesGroup = new THREE.Group();
+            const axisMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.15 });
+            const xCyl = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 4.4, 8), axisMat); xCyl.rotation.z = Math.PI / 2;
+            const yCyl = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 4.4, 8), axisMat);
+            const zCyl = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 4.4, 8), axisMat); zCyl.rotation.x = Math.PI / 2;
+            axesGroup.add(xCyl, yCyl, zCyl); group.add(axesGroup);
 
-        function updateDynamicSprite(sprite, text, color) {
-            const canvas = sprite.material.map.image; const ctx = canvas.getContext('2d');
-            ctx.clearRect(0, 0, 256, 128); ctx.fillStyle = color; ctx.fillText(text, 128, 64);
-            sprite.material.map.needsUpdate = true;
+            createAndAddLabel(group, `Qubit ${i}`, '#ffffff', -2.5, 2.3, 0);
+            createAndAddLabel(group, '|0⟩', '#38bdf8', 0, 2.2, 0); createAndAddLabel(group, '|1⟩', '#38bdf8', 0, -2.2, 0);
+            createAndAddLabel(group, '|+⟩(X)', '#94a3b8', 2.3, 0, 0); createAndAddLabel(group, '|-⟩(-X)', '#94a3b8', -2.3, 0, 0);
+            createAndAddLabel(group, '|i⟩(Y)', '#94a3b8', 0, 0, 2.3); createAndAddLabel(group, '|-i⟩(-Y)', '#94a3b8', 0, 0, -2.3);
+
+            const thetaLabel = createAndAddLabel(group, 'θ: 0.00', '#f59e0b', 0, 0, 0);
+            const phiLabel = createAndAddLabel(group, 'φ: 0.00', '#d946ef', 0, 0, 0);
+
+            const maxPoints = 50;
+            const thetaGeo = new THREE.BufferGeometry(); const thetaPositions = new Float32Array(maxPoints * 3);
+            thetaGeo.setAttribute('position', new THREE.BufferAttribute(thetaPositions, 3));
+            const thetaLine = new THREE.Line(thetaGeo, new THREE.LineBasicMaterial({ color: 0xf59e0b, linewidth: 2 })); group.add(thetaLine);
+
+            const phiGeo = new THREE.BufferGeometry(); const phiPositions = new Float32Array(maxPoints * 3);
+            phiGeo.setAttribute('position', new THREE.BufferAttribute(phiPositions, 3));
+            const phiLine = new THREE.Line(phiGeo, new THREE.LineBasicMaterial({ color: 0xd946ef, linewidth: 2 })); group.add(phiLine);
+
+            const customArrow = new THREE.Group();
+            const shaftMat = new THREE.MeshBasicMaterial({ color: 0x0ea5e9 });
+            const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 1, 16), shaftMat); shaft.geometry.translate(0, 0.5, 0); 
+            const head = new THREE.Mesh(new THREE.ConeGeometry(0.12, 0.25, 16), shaftMat); head.geometry.translate(0, 0.125, 0);
+            customArrow.add(shaft, head); group.add(customArrow);
+            
+            const tipMesh = new THREE.Mesh(new THREE.SphereGeometry(0.06, 16, 16), new THREE.MeshBasicMaterial({ color: 0x38bdf8 })); group.add(tipMesh);
+
+            spheresData.push({ group, mesh, thetaLabel, phiLabel, thetaLine, phiLine, customArrow, shaft, head, tipMesh, thetaPositions, phiPositions, targetTheta: 0, currentTheta: 0, targetPhi: 0, currentPhi: 0, targetLength: 2, currentLength: 2 });
         }
 
-        const maxPoints = 50;
-        const thetaGeo = new THREE.BufferGeometry(); const thetaPositions = new Float32Array(maxPoints * 3);
-        thetaGeo.setAttribute('position', new THREE.BufferAttribute(thetaPositions, 3));
-        const thetaLine = new THREE.Line(thetaGeo, new THREE.LineBasicMaterial({ color: 0xf59e0b, linewidth: 2 })); sphereGroup.add(thetaLine);
+        camera.position.set(0, 3, 13);
+        let mathManualTimer = null;
 
-        const phiGeo = new THREE.BufferGeometry(); const phiPositions = new Float32Array(maxPoints * 3);
-        phiGeo.setAttribute('position', new THREE.BufferAttribute(phiPositions, 3));
-        const phiLine = new THREE.Line(phiGeo, new THREE.LineBasicMaterial({ color: 0xd946ef, linewidth: 2 })); sphereGroup.add(phiLine);
-
-        const customArrow = new THREE.Group();
-        const shaftMat = new THREE.MeshBasicMaterial({ color: 0x0ea5e9 });
-        const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 1, 16), shaftMat); shaft.geometry.translate(0, 0.5, 0); 
-        const head = new THREE.Mesh(new THREE.ConeGeometry(0.12, 0.25, 16), shaftMat); head.geometry.translate(0, 0.125, 0);
-        customArrow.add(shaft, head); sphereGroup.add(customArrow);
-        
-        const tipMesh = new THREE.Mesh(new THREE.SphereGeometry(0.06, 16, 16), new THREE.MeshBasicMaterial({ color: 0x38bdf8 })); scene.add(tipMesh);
-        camera.position.set(2.5, 2.5, 4.2);
-
-        let targetTheta = 0, currentTheta = 0; let targetPhi = 0, currentPhi = 0; let targetLength = 2, currentLength = 2;
-        let mathDebounceTimer = null;
-
-        // --- INTEGRAÇÃO HÍBRIDA (SLIDER + TECLADO + MATEMÁTICA ACADÊMICA) ---
         function handleManualInput(source, thVal, phVal) {
             let th = parseFloat(thVal); let ph = parseFloat(phVal);
-            if(th < 0) th = 0; if(th > 3.14) th = 3.14;
-            if(ph < 0) ph = 0; if(ph > 6.28) ph = 6.28;
-
-            if(source !== 'theta-slider') document.getElementById('theta').value = th;
-            if(source !== 'theta-input') document.getElementById('theta-input').value = th.toFixed(2);
-            if(source !== 'phi-slider') document.getElementById('phi').value = ph;
-            if(source !== 'phi-input') document.getElementById('phi-input').value = ph.toFixed(2);
-
-            lastUpdateType = 'manual'; lastManualData = {th, ph};
-
-            let q = qubitsState[activeQubit]; q.ent = false;
-            q.a = { r: Math.cos(th/2), i: 0 };
-            q.b = { r: Math.sin(th/2) * Math.cos(ph), i: Math.sin(th/2) * Math.sin(ph) };
+            if(th < 0) th = 0; if(th > 3.14) th = 3.14; if(ph < 0) ph = 0; if(ph > 6.28) ph = 6.28;
             
-            updateSphere(activeQubit);
-
-            // Atraso de 300ms para o MathJax processar a Fórmula de Dirac Oficial sem causar lentidão!
-            clearTimeout(mathDebounceTimer);
-            mathDebounceTimer = setTimeout(() => {
-                const amp0 = C.mag(q.a).toFixed(2); const amp1 = C.mag(q.b).toFixed(2);
-                let equation = `$$ |\\psi_{q${activeQubit}}\\rangle = \\cos\\left(\\frac{${th.toFixed(2)}}{2}\\right)|0\\rangle + e^{i ${ph.toFixed(2)}}\\sin\\left(\\frac{${th.toFixed(2)}}{2}\\right)|1\\rangle = ${amp0}|0\\rangle + e^{i ${ph.toFixed(2)}} ${amp1}|1\\rangle $$`;
-                document.getElementById('math-display').innerHTML = equation;
-                window.renderMathSafe();
-            }, 300);
+            if(source !== 'theta-slider') document.getElementById('theta').value = th; if(source !== 'theta-input') document.getElementById('theta-input').value = th.toFixed(2);
+            if(source !== 'phi-slider') document.getElementById('phi').value = ph; if(source !== 'phi-input') document.getElementById('phi-input').value = ph.toFixed(2);
+            
+            lastUpdateType = 'manual'; 
+            let q = qubitsState[activeQubit]; q.ent = false;
+            q.a = { r: Math.cos(th/2), i: 0 }; q.b = { r: Math.sin(th/2) * Math.cos(ph), i: Math.sin(th/2) * Math.sin(ph) };
+            
+            updateUIState();
+            
+            clearTimeout(mathManualTimer);
+            mathManualTimer = setTimeout(() => {
+                let equation = `$$ |\\psi_{q${activeQubit}}\\rangle = \\cos\\left(\\frac{${th.toFixed(2)}}{2}\\right)|0\\rangle + e^{i ${ph.toFixed(2)}}\\sin\\left(\\frac{${th.toFixed(2)}}{2}\\right)|1\\rangle $$`;
+                document.getElementById('math-display').innerHTML = equation; window.renderMathSafe();
+            }, 100);
         }
 
         document.getElementById('theta').addEventListener('input', (e) => handleManualInput('theta-slider', e.target.value, document.getElementById('phi').value));
@@ -597,74 +611,94 @@
         document.getElementById('phi').addEventListener('input', (e) => handleManualInput('phi-slider', document.getElementById('theta').value, e.target.value));
         document.getElementById('phi-input').addEventListener('change', (e) => handleManualInput('phi-input', document.getElementById('theta').value, e.target.value));
 
-        function updateSphere(id) {
-            const q = qubitsState[id];
-            if(q.ent) {
-                targetLength = 0.01;
-                document.getElementById('state-vector').innerHTML = `|ψ<sub>q${id}</sub>⟩ <span style="color:#ef4444; margin-left:10px;"> = ${dict[currentLang].mEnt} (r=0)</span>`;
-                thetaLine.visible = false; phiLine.visible = false; thetaLabel.visible = false; phiLabel.visible = false;
-                return;
+        function updateDynamicSprite(sprite, text, color) {
+            const canvas = sprite.material.map.image; const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, 256, 128); ctx.fillStyle = color; ctx.fillText(text, 128, 64);
+            sprite.material.map.needsUpdate = true;
+        }
+
+        function updateUIState() {
+            const q = qubitsState[activeQubit];
+            if(q.ent) { document.getElementById('state-vector').innerHTML = `|ψ<sub>q${activeQubit}</sub>⟩ <span style="color:#ef4444; margin-left:10px;"> = ${dict[currentLang].mEnt}</span>`; } 
+            else {
+                let ma = Math.max(0, Math.min(1, C.mag(q.a))); let phase = C.arg(q.b) - C.arg(q.a); if(phase < 0) phase += 2 * Math.PI;
+                let t_th = 2 * Math.acos(ma);
+                if(lastUpdateType === 'circuit') { document.getElementById('theta').value = t_th; document.getElementById('phi').value = phase; document.getElementById('theta-input').value = t_th.toFixed(2); document.getElementById('phi-input').value = phase.toFixed(2); }
+                const amp0 = C.mag(q.a).toFixed(2); const amp1 = C.mag(q.b).toFixed(2);
+                let htmlStr = `|ψ<sub>q${activeQubit}</sub>⟩ = ${amp0}|0⟩`; if (amp1 > 0) htmlStr += ` + e<sup>i ${phase.toFixed(2)}</sup> ${amp1}|1⟩`;
+                document.getElementById('state-vector').innerHTML = htmlStr;
             }
 
-            let m_a = Math.max(0, Math.min(1, C.mag(q.a)));
-            let phase = C.arg(q.b) - C.arg(q.a); if(phase < 0) phase += 2 * Math.PI;
-            
-            targetTheta = 2 * Math.acos(m_a); targetPhi = phase; targetLength = 2;
-
-            if(lastUpdateType === 'circuit') {
-                document.getElementById('theta').value = targetTheta;
-                document.getElementById('phi').value = targetPhi;
-                document.getElementById('theta-input').value = targetTheta.toFixed(2);
-                document.getElementById('phi-input').value = targetPhi.toFixed(2);
+            for(let i=0; i<3; i++) {
+                let qi = qubitsState[i]; let sData = spheresData[i];
+                if(qi.ent) { 
+                    sData.targetLength = 0.01; sData.mesh.material.color.setHex(0xef4444); 
+                    sData.thetaLine.visible = false; sData.phiLine.visible = false; 
+                    sData.thetaLabel.visible = false; sData.phiLabel.visible = false;
+                } else {
+                    let ma = Math.max(0, Math.min(1, C.mag(qi.a))); let ph = C.arg(qi.b) - C.arg(qi.a); if(ph < 0) ph += 2 * Math.PI;
+                    sData.targetTheta = 2 * Math.acos(ma); sData.targetPhi = ph; sData.targetLength = 2;
+                    sData.mesh.material.color.setHex(0x3b82f6); 
+                    sData.thetaLine.visible = true; sData.phiLine.visible = true;
+                    sData.thetaLabel.visible = true; sData.phiLabel.visible = true;
+                    updateDynamicSprite(sData.thetaLabel, `θ: ${sData.targetTheta.toFixed(2)}`, '#f59e0b');
+                    updateDynamicSprite(sData.phiLabel, `φ: ${sData.targetPhi.toFixed(2)}`, '#d946ef');
+                }
             }
-
-            const amp0 = C.mag(q.a).toFixed(2); const amp1 = C.mag(q.b).toFixed(2);
-            let htmlStr = `|ψ<sub>q${id}</sub>⟩ = ${amp0}|0⟩`;
-            if (amp1 > 0) htmlStr += ` + e<sup>i ${phase.toFixed(2)}</sup> ${amp1}|1⟩`;
-            document.getElementById('state-vector').innerHTML = htmlStr;
-
-            thetaLine.visible = true; phiLine.visible = true; thetaLabel.visible = true; phiLabel.visible = true;
-            updateDynamicSprite(thetaLabel, `θ: ${targetTheta.toFixed(2)}`, '#f59e0b');
-            updateDynamicSprite(phiLabel, `φ: ${targetPhi.toFixed(2)}`, '#d946ef');
         }
 
         function animate() {
             requestAnimationFrame(animate);
-            sphereGroup.rotation.y += 0.003;
-            
-            currentTheta += (targetTheta - currentTheta) * 0.15; currentLength += (targetLength - currentLength) * 0.15;
-            let dPhi = targetPhi - currentPhi; if (dPhi > Math.PI) dPhi -= 2 * Math.PI; if (dPhi < -Math.PI) dPhi += 2 * Math.PI; currentPhi += dPhi * 0.15;
 
-            for(let i=0; i<maxPoints; i++) {
-                let t = (i/(maxPoints-1)) * currentTheta;
-                thetaPositions[i*3] = 2 * Math.sin(t) * Math.cos(currentPhi); thetaPositions[i*3+1] = 2 * Math.cos(t); thetaPositions[i*3+2] = 2 * Math.sin(t) * Math.sin(currentPhi);
-                let p = (i/(maxPoints-1)) * currentPhi;
-                phiPositions[i*3] = 2 * Math.cos(p); phiPositions[i*3+1] = 0; phiPositions[i*3+2] = 2 * Math.sin(p);
+            for(let i=0; i<3; i++) {
+                let sd = spheresData[i]; 
+                
+                // Botão Girar / Pausar
+                if(isRotating) { sd.group.rotation.y += 0.003; }
+
+                sd.currentTheta += (sd.targetTheta - sd.currentTheta) * 0.15; sd.currentLength += (sd.targetLength - sd.currentLength) * 0.15;
+                let dPhi = sd.targetPhi - sd.currentPhi; if (dPhi > Math.PI) dPhi -= 2 * Math.PI; if (dPhi < -Math.PI) dPhi += 2 * Math.PI; sd.currentPhi += dPhi * 0.15;
+
+                for(let j=0; j<50; j++) {
+                    let t = (j/49) * sd.currentTheta;
+                    sd.thetaPositions[j*3] = 2 * Math.sin(t) * Math.cos(sd.currentPhi); sd.thetaPositions[j*3+1] = 2 * Math.cos(t); sd.thetaPositions[j*3+2] = 2 * Math.sin(t) * Math.sin(sd.currentPhi);
+                    let p = (j/49) * sd.currentPhi;
+                    sd.phiPositions[j*3] = 2 * Math.cos(p); sd.phiPositions[j*3+1] = 0; sd.phiPositions[j*3+2] = 2 * Math.sin(p);
+                }
+                sd.thetaLine.geometry.attributes.position.needsUpdate = true; sd.phiLine.geometry.attributes.position.needsUpdate = true;
+                
+                let x = Math.sin(sd.currentTheta) * Math.cos(sd.currentPhi); let z = Math.sin(sd.currentTheta) * Math.sin(sd.currentPhi); let y = Math.cos(sd.currentTheta);
+                let dir = new THREE.Vector3(x, y, z).normalize();
+                const quaternion = new THREE.Quaternion(); quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir);
+                sd.customArrow.quaternion.copy(quaternion);
+                
+                let headLen = 0.25; let shaftLen = Math.max(0.01, sd.currentLength - headLen);
+                sd.shaft.scale.set(1, shaftLen, 1); sd.head.position.y = shaftLen;
+                
+                // Posições corrigidas (100% Locais para não explodir os vetores)
+                sd.tipMesh.position.set(x * sd.currentLength, y * sd.currentLength, z * sd.currentLength);
+
+                let halfT = sd.currentTheta/2; 
+                sd.thetaLabel.position.set(2.2 * Math.sin(halfT) * Math.cos(sd.currentPhi), 2.2 * Math.cos(halfT), 2.2 * Math.sin(halfT) * Math.sin(sd.currentPhi));
+
+                let halfP = sd.currentPhi/2; 
+                sd.phiLabel.position.set(2.2 * Math.cos(halfP), 0, 2.2 * Math.sin(halfP));
             }
-            thetaLine.geometry.attributes.position.needsUpdate = true; phiLine.geometry.attributes.position.needsUpdate = true;
-
-            let x = Math.sin(currentTheta) * Math.cos(currentPhi); let z = Math.sin(currentTheta) * Math.sin(currentPhi); let y = Math.cos(currentTheta);
-            let dir = new THREE.Vector3(x, y, z).normalize();
-            const quaternion = new THREE.Quaternion(); quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir);
-            customArrow.quaternion.copy(quaternion);
-            
-            let headLen = 0.25; let shaftLen = Math.max(0.01, currentLength - headLen);
-            shaft.scale.set(1, shaftLen, 1); head.position.y = shaftLen;
-            
-            let worldTip = new THREE.Vector3(x * currentLength, y * currentLength, z * currentLength).applyMatrix4(sphereGroup.matrixWorld);
-            tipMesh.position.copy(worldTip);
-
-            let halfT = currentTheta/2; let hudTheta = new THREE.Vector3(2.2 * Math.sin(halfT) * Math.cos(currentPhi), 2.2 * Math.cos(halfT), 2.2 * Math.sin(halfT) * Math.sin(currentPhi)).applyMatrix4(sphereGroup.matrixWorld);
-            thetaLabel.position.copy(hudTheta);
-
-            let halfP = currentPhi/2; let hudPhi = new THREE.Vector3(2.2 * Math.cos(halfP), 0, 2.2 * Math.sin(halfP)).applyMatrix4(sphereGroup.matrixWorld);
-            phiLabel.position.copy(hudPhi);
-
             controls.update(); renderer.render(scene, camera);
         }
 
-        function handleResize() { const c = document.getElementById('canvas-container'); const s = c.clientHeight; c.style.width = s + 'px'; camera.aspect = 1; camera.updateProjectionMatrix(); renderer.setSize(s, s); }
-        window.addEventListener('resize', handleResize); setTimeout(handleResize, 150); 
+        function handleResize() { 
+            const c = document.getElementById('canvas-container'); 
+            if(!c) return;
+            const rect = c.getBoundingClientRect(); 
+            if(rect.width > 0 && rect.height > 0) {
+                camera.aspect = rect.width / rect.height; 
+                camera.updateProjectionMatrix(); 
+                renderer.setSize(rect.width, rect.height); 
+            }
+        }
+        window.addEventListener('resize', handleResize); 
+        setTimeout(handleResize, 150); 
         
         setLang('pt'); animate();
     </script>
